@@ -42,10 +42,10 @@ def generate_telemetry(force_mode=None):
         # Guaranteed safe command within 220V - 240V
         ai_voltage = baseline_ai.predict_voltage(grid_load, battery_temp)
     elif force_mode == "attack":
-        # Adversarial poisoned AI command (5000V spike)
-        ai_voltage = 5000.0
+        # Adversarial poisoned AI command: dynamic random voltage strictly > 250V
+        ai_voltage = ai_controller.generate_unsafe_voltage()
     else:
-        # Auto simulation (85% safe, 15% attack)
+        # Auto simulation (85% safe, 15% attack with dynamic >250V spikes)
         ai_voltage = ai_controller.predict_voltage(grid_load, battery_temp)
 
     # 2. Hardware watchdog safety validation
@@ -68,11 +68,13 @@ def generate_telemetry(force_mode=None):
         "mode": force_mode or "auto",
         "active_controller": active_controller,
         "applied_voltage": applied_voltage,
+        "raw_ai_voltage": ai_voltage,
+        "attack_voltage": ai_voltage if not is_safe else None,
+        "fallback_voltage": fallback.get_safe_voltage() if not is_safe else None,
         "failover_time": failover_time,
         "failover_time_ms": failover_time,
         "grid_load": grid_load,
         "battery_temp": battery_temp,
-        "raw_ai_voltage": ai_voltage,
         "watchdog_passed": is_safe,
         "timestamp": round(time.time(), 3),
     })

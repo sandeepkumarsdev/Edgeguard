@@ -326,7 +326,7 @@
       font-size: 12.5px;
       font-family: 'JetBrains Mono', monospace;
       color: #94a3b8;
-      max-width: 600px;
+      max-width: 620px;
       transition: color 0.3s ease;
     }
 
@@ -409,11 +409,27 @@
       font-weight: 800;
       font-family: 'JetBrains Mono', monospace;
       letter-spacing: -0.5px;
+      transition: color 0.3s ease;
     }
 
     .card-subtext {
       font-size: 13px;
       color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .voltage-protection-banner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(254, 202, 202, 0.35);
+      font-size: 12.5px;
+      color: #fef08a;
+      font-family: 'JetBrains Mono', monospace;
+      margin-top: 6px;
       line-height: 1.4;
     }
 
@@ -536,16 +552,16 @@
           <div class="button-icon">🟢</div>
           <div class="button-text">
             <span class="button-title">Simulate Safe AI Operation</span>
-            <span class="button-desc">AI predicts valid voltage (220V–240V). Hardware Watchdog passes & Primary AI retains control.</span>
+            <span class="button-desc">AI predicts safe voltage (220V–240V). Hardware Watchdog passes & Primary AI retains control.</span>
           </div>
         </button>
 
         <!-- Button 2: Test Unsafe AI Attack -->
-        <button id="btn-test-attack" class="sim-button btn-simulate-attack" type="button" title="Inject adversarial 5000V spike to trigger Hardware Watchdog shutdown">
+        <button id="btn-test-attack" class="sim-button btn-simulate-attack" type="button" title="Inject adversarial overvoltage spike (>250V) to trigger Hardware Watchdog shutdown">
           <div class="button-icon">⚡</div>
           <div class="button-text">
-            <span class="button-title">Inject Poisoned AI Attack (5000V)</span>
-            <span class="button-desc">AI commands catastrophic 5000V. Watchdog immediately shuts down AI commands & engages Fallback Microcontroller (210V).</span>
+            <span class="button-title">Inject Poisoned AI Attack (>250V Spike)</span>
+            <span class="button-desc">AI commands dynamic dangerous voltage (>250V). Watchdog intercepts violation, shuts down AI commands & clamps circuit to 210V.</span>
           </div>
         </button>
       </div>
@@ -566,11 +582,15 @@
 
     <!-- Main Metrics -->
     <div class="metrics-grid">
-      <!-- Current Applied Voltage -->
+      <!-- Voltage Display Card -->
       <div class="card" id="voltage-card">
-        <div class="card-label">Current Applied Voltage</div>
+        <div class="card-label" id="voltage-card-label">Current Monitored Voltage</div>
         <div class="card-value" id="current-voltage">-- V</div>
-        <div class="card-subtext">Safe Hardware Operating Limit: 200.0V - 250.0V</div>
+        <div class="card-subtext" id="voltage-card-subtext">Safe Hardware Operating Limit: 200.0V - 250.0V</div>
+        <div id="voltage-protection-banner" class="voltage-protection-banner" style="display: none;">
+          <span>🔒</span>
+          <span>Watchdog Cutoff Active: Power clamped to <strong>210.00 V</strong> (Fallback Microcontroller)</span>
+        </div>
       </div>
 
       <!-- Active Controller -->
@@ -591,7 +611,7 @@
     <!-- Diagnostic Inspection Strip -->
     <div class="diagnostics-strip">
       <div class="diag-item">
-        <span class="diag-label">Raw AI Output:</span>
+        <span class="diag-label">Raw AI Command:</span>
         <span class="diag-value" id="diag-raw-voltage">-- V</span>
       </div>
       <div class="diag-item">
@@ -628,6 +648,10 @@
   <script>
     const bodyEl = document.getElementById('page-body');
     const voltageEl = document.getElementById('current-voltage');
+    const voltageLabelEl = document.getElementById('voltage-card-label');
+    const voltageSubtextEl = document.getElementById('voltage-card-subtext');
+    const protectionBannerEl = document.getElementById('voltage-protection-banner');
+
     const controllerEl = document.getElementById('active-controller');
     const bannerEl = document.getElementById('warning-banner');
     const recoveryCardEl = document.getElementById('recovery-card');
@@ -687,19 +711,18 @@
     function renderTelemetry(data) {
       if (!data || data.active_controller === undefined) return;
 
-      // 1. Voltage & Active Controller
-      voltageEl.textContent = `${Number(data.applied_voltage).toFixed(2)} V`;
+      const rawVoltage = data.raw_ai_voltage !== undefined ? Number(data.raw_ai_voltage).toFixed(2) : '--';
+      const appliedVoltage = data.applied_voltage !== undefined ? Number(data.applied_voltage).toFixed(2) : '--';
+      const isSafe = data.watchdog_passed === true;
+
+      // 1. Controller and Diagnostic details
       controllerEl.textContent = data.active_controller;
+      diagRawVoltage.textContent = `${rawVoltage} V`;
 
       // 2. Metrics & Telemetry Details
       if (data.iteration !== undefined) iterEl.textContent = `#${data.iteration}`;
       if (data.grid_load !== undefined) gridEl.textContent = `${(data.grid_load * 100).toFixed(0)}%`;
       if (data.battery_temp !== undefined) tempEl.textContent = `${data.battery_temp}°C`;
-
-      const rawVoltage = data.raw_ai_voltage !== undefined ? Number(data.raw_ai_voltage).toFixed(2) : '--';
-      diagRawVoltage.textContent = `${rawVoltage} V`;
-
-      const isSafe = data.watchdog_passed === true;
 
       // 3. State Management & Visuals
       if (isSafe) {
@@ -709,6 +732,13 @@
 
         bannerEl.style.display = 'none';
         recoveryCardEl.style.display = 'none';
+
+        // Primary Voltage Display
+        voltageLabelEl.textContent = 'Current Monitored Voltage';
+        voltageEl.textContent = `${rawVoltage} V`;
+        voltageEl.style.color = '#ffffff';
+        voltageSubtextEl.textContent = 'Safe Hardware Operating Limit: 200.0V - 250.0V';
+        protectionBannerEl.style.display = 'none';
 
         statusIndicator.textContent = 'SECURE (PRIMARY AI)';
         controllerDetail.textContent = 'Edge AI neural output validated within physical boundaries (200V–250V)';
@@ -723,16 +753,23 @@
         diagHardwareState.style.color = '#34d399';
 
         if (currentMode === 'safe') {
-          actionFeedback.textContent = `🟢 [Safe Test]: AI commanded ${rawVoltage}V. Hardware Watchdog verified safe operating bounds. Primary AI retained.`;
+          actionFeedback.textContent = `🟢 [Safe Test]: AI commanded ${rawVoltage}V. Hardware Watchdog verified safe operating window (200V–250V). Primary AI retained.`;
           actionFeedback.className = 'action-feedback safe';
         }
       } else {
-        // Compromised: Red flashing screen, warning banner, millisecond recovery
+        // Compromised / Attack: Red flashing screen, warning banner, millisecond recovery
         bodyEl.classList.remove('state-primary');
         bodyEl.classList.add('state-fallback');
 
         bannerEl.style.display = 'block';
         recoveryCardEl.style.display = 'block';
+
+        // Display the ATTACK VOLTAGE SPIKE prominently so the user clearly sees the dangerous voltage
+        voltageLabelEl.textContent = '⚡ Detected AI Attack Voltage (Unsafe Spike)';
+        voltageEl.textContent = `${rawVoltage} V`;
+        voltageEl.style.color = '#fef08a';
+        voltageSubtextEl.textContent = `CRITICAL OVERVOLTAGE: AI commanded ${rawVoltage}V (>250V threshold). Hardware Watchdog shut down AI commands!`;
+        protectionBannerEl.style.display = 'flex';
 
         const failoverMs = data.failover_time !== undefined ? data.failover_time : data.failover_time_ms;
         recoveryTimeEl.textContent = `${Number(failoverMs).toFixed(4)} ms`;
@@ -750,7 +787,7 @@
         diagHardwareState.style.color = '#fef08a';
 
         if (currentMode === 'attack') {
-          actionFeedback.textContent = `⚡ [Attack Test]: AI attempted ${rawVoltage}V spike! Hardware Watchdog intercepted violation, shut down AI, & failed over to Safe Microcontroller in ${Number(failoverMs).toFixed(4)} ms.`;
+          actionFeedback.textContent = `⚡ [Attack Test]: AI attempted ${rawVoltage}V spike (>250V safe limit)! Hardware Watchdog intercepted command, shut down AI, & clamped power to 210.00V Fallback in ${Number(failoverMs).toFixed(4)} ms.`;
           actionFeedback.className = 'action-feedback attack';
         }
       }
@@ -775,7 +812,7 @@
     // Button 2: Test Unsafe AI Attack
     btnAttack.addEventListener('click', async () => {
       updateModeUI('attack');
-      actionFeedback.textContent = 'Injecting 5000V adversarial command to test Hardware Watchdog shutdown...';
+      actionFeedback.textContent = 'Injecting dangerous overvoltage command (>250V) to test Hardware Watchdog shutdown...';
       actionFeedback.className = 'action-feedback attack';
       const data = await fetchTelemetry('attack');
       renderTelemetry(data);

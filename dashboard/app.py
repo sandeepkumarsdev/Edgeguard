@@ -41,7 +41,7 @@ def get_data():
 
     Supports query parameters:
       - mode=safe: Forces correct AI commands (220V-240V, Watchdog passes).
-      - mode=attack: Forces unsafe/poisoned AI commands (5000V spike, Watchdog shuts down AI & fails over).
+      - mode=attack: Forces unsafe/poisoned AI commands (> 250V spike, Watchdog shuts down AI & fails over).
       - mode=auto or omitted: Continuous stream from local log (if active) or auto simulation.
     """
     global telemetry_step
@@ -78,10 +78,10 @@ def get_data():
         # Guaranteed safe command within 220V - 240V
         ai_voltage = baseline_ai.predict_voltage(grid_load, battery_temp)
     elif mode == "attack":
-        # Malicious adversarial spike simulating poisoned AI
-        ai_voltage = 5000.0
+        # Malicious adversarial spike strictly exceeding safe limit (>250V)
+        ai_voltage = ai_controller.generate_unsafe_voltage()
     else:
-        # Default auto simulation (85% safe, 15% attack)
+        # Default auto simulation (85% safe, 15% attack with dynamic >250V spikes)
         ai_voltage = ai_controller.predict_voltage(grid_load, battery_temp)
 
     # 2. Hardware watchdog safety validation
@@ -104,11 +104,13 @@ def get_data():
         "mode": mode or "auto",
         "active_controller": active_controller,
         "applied_voltage": applied_voltage,
+        "raw_ai_voltage": ai_voltage,
+        "attack_voltage": ai_voltage if not is_safe else None,
+        "fallback_voltage": fallback.get_safe_voltage() if not is_safe else None,
         "failover_time": failover_time,
         "failover_time_ms": failover_time,
         "grid_load": grid_load,
         "battery_temp": battery_temp,
-        "raw_ai_voltage": ai_voltage,
         "watchdog_passed": is_safe,
         "timestamp": round(time.time(), 3),
     })
