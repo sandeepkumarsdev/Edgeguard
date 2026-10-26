@@ -3,21 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EdgeGuard | Edge AI Resilience Dashboard</title>
+  <title>EdgeGuard | Edge AI Resilience & Hardware Watchdog Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
 
   <style>
     :root {
       --color-green-bg: #064e3b;
       --color-green-dark: #022c22;
       --color-green-card: rgba(6, 78, 59, 0.45);
-      --color-green-border: rgba(52, 211, 153, 0.35);
-      --color-red-card: rgba(127, 29, 29, 0.5);
-      --color-red-border: rgba(248, 113, 113, 0.45);
+      --color-green-border: rgba(52, 211, 153, 0.4);
+      --color-red-card: rgba(127, 29, 29, 0.55);
+      --color-red-border: rgba(248, 113, 113, 0.5);
       --text-primary: #f8fafc;
       --text-muted: #cbd5e1;
+      --emerald-500: #10b981;
+      --emerald-400: #34d399;
+      --red-500: #ef4444;
+      --red-400: #f87171;
     }
 
     * {
@@ -36,7 +40,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 32px 20px;
+      padding: 28px 18px 48px;
     }
 
     /* State: Primary AI (Green Background) */
@@ -47,7 +51,7 @@
 
     /* State: Deterministic Fallback (Flashing Red Screen) */
     body.state-fallback {
-      animation: redFlash 0.7s infinite alternate ease-in-out;
+      animation: redFlash 0.75s infinite alternate ease-in-out;
     }
 
     @keyframes redFlash {
@@ -63,10 +67,10 @@
 
     .container {
       width: 100%;
-      max-width: 900px;
+      max-width: 940px;
       display: flex;
       flex-direction: column;
-      gap: 24px;
+      gap: 22px;
     }
 
     /* Header */
@@ -76,19 +80,19 @@
       align-items: center;
       padding: 18px 26px;
       border-radius: 18px;
-      background: rgba(15, 23, 42, 0.6);
-      backdrop-filter: blur(14px);
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(16px);
       border: 1px solid rgba(255, 255, 255, 0.12);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
     }
 
     .brand-title {
-      font-size: 24px;
+      font-size: 22px;
       font-weight: 800;
       letter-spacing: 0.5px;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
 
     .live-badge {
@@ -98,29 +102,240 @@
       font-size: 13px;
       font-weight: 700;
       letter-spacing: 1px;
-      padding: 6px 14px;
+      padding: 7px 16px;
       border-radius: 20px;
       background: rgba(255, 255, 255, 0.1);
       border: 1px solid rgba(255, 255, 255, 0.2);
     }
 
     .pulse-dot {
-      width: 8px;
-      height: 8px;
+      width: 9px;
+      height: 9px;
       border-radius: 50%;
-      background: #34d399;
-      box-shadow: 0 0 10px #34d399;
+      background: var(--emerald-400);
+      box-shadow: 0 0 10px var(--emerald-400);
       animation: pulse 1.5s infinite;
     }
 
     body.state-fallback .pulse-dot {
       background: #fee2e2;
-      box-shadow: 0 0 10px #fee2e2;
+      box-shadow: 0 0 12px #fee2e2;
     }
 
     @keyframes pulse {
       0%, 100% { opacity: 1; transform: scale(1); }
       50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    /* Control Panel */
+    .control-panel {
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 20px;
+      padding: 22px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .control-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .control-heading {
+      font-size: 15px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .mode-indicator {
+      font-size: 12px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 4px 12px;
+      border-radius: 12px;
+      letter-spacing: 0.8px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #e2e8f0;
+      transition: all 0.3s ease;
+    }
+
+    .mode-indicator.mode-safe {
+      background: rgba(16, 185, 129, 0.25);
+      border-color: rgba(52, 211, 153, 0.6);
+      color: #6ee7b7;
+    }
+
+    .mode-indicator.mode-attack {
+      background: rgba(239, 68, 68, 0.28);
+      border-color: rgba(248, 113, 113, 0.7);
+      color: #fca5a5;
+    }
+
+    /* Simulation Buttons Grid */
+    .button-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 700px) {
+      .button-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .sim-button {
+      cursor: pointer;
+      border: none;
+      outline: none;
+      text-align: left;
+      padding: 18px 20px;
+      border-radius: 16px;
+      color: #ffffff;
+      font-family: inherit;
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .sim-button:hover {
+      transform: translateY(-2px);
+    }
+
+    .sim-button:active {
+      transform: translateY(1px);
+    }
+
+    /* Safe Button */
+    .btn-simulate-safe {
+      background: linear-gradient(135deg, rgba(6, 95, 70, 0.85) 0%, rgba(4, 120, 87, 0.65) 100%);
+      border: 1.5px solid rgba(52, 211, 153, 0.5);
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.2);
+    }
+
+    .btn-simulate-safe:hover {
+      border-color: rgba(52, 211, 153, 0.9);
+      box-shadow: 0 8px 28px rgba(16, 185, 129, 0.45);
+    }
+
+    .btn-simulate-safe.active {
+      border-color: #6ee7b7;
+      box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.4), 0 8px 30px rgba(16, 185, 129, 0.5);
+    }
+
+    /* Attack Button */
+    .btn-simulate-attack {
+      background: linear-gradient(135deg, rgba(153, 27, 27, 0.85) 0%, rgba(220, 38, 38, 0.65) 100%);
+      border: 1.5px solid rgba(248, 113, 113, 0.55);
+      box-shadow: 0 6px 20px rgba(239, 68, 68, 0.2);
+    }
+
+    .btn-simulate-attack:hover {
+      border-color: rgba(248, 113, 113, 0.95);
+      box-shadow: 0 8px 28px rgba(239, 68, 68, 0.55);
+    }
+
+    .btn-simulate-attack.active {
+      border-color: #fca5a5;
+      box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.45), 0 8px 30px rgba(239, 68, 68, 0.65);
+    }
+
+    .button-icon {
+      font-size: 28px;
+      line-height: 1;
+      padding: 8px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.12);
+      flex-shrink: 0;
+    }
+
+    .button-text {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .button-title {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+    }
+
+    .button-desc {
+      font-size: 12.5px;
+      color: rgba(255, 255, 255, 0.82);
+      line-height: 1.4;
+    }
+
+    /* Control Footer & Feedback Banner */
+    .control-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding-top: 6px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .btn-auto-stream {
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-muted);
+      padding: 7px 16px;
+      border-radius: 10px;
+      font-size: 12.5px;
+      font-weight: 600;
+      font-family: inherit;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-auto-stream:hover {
+      background: rgba(255, 255, 255, 0.14);
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .btn-auto-stream.active {
+      background: rgba(56, 189, 248, 0.18);
+      border-color: rgba(56, 189, 248, 0.5);
+      color: #bae6fd;
+    }
+
+    .action-feedback {
+      font-size: 12.5px;
+      font-family: 'JetBrains Mono', monospace;
+      color: #94a3b8;
+      max-width: 600px;
+      transition: color 0.3s ease;
+    }
+
+    .action-feedback.safe {
+      color: #6ee7b7;
+    }
+
+    .action-feedback.attack {
+      color: #fca5a5;
     }
 
     /* Warning Banner */
@@ -130,7 +345,7 @@
       color: #ffffff;
       text-align: center;
       padding: 20px 24px;
-      font-size: 22px;
+      font-size: 21px;
       font-weight: 800;
       letter-spacing: 2px;
       text-transform: uppercase;
@@ -145,7 +360,7 @@
       100% { transform: scale(1.015); box-shadow: 0 0 50px rgba(239, 68, 68, 1); }
     }
 
-    /* Metrics Grid */
+    /* Main Metrics Grid */
     .metrics-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -182,7 +397,7 @@
     }
 
     .card-label {
-      font-size: 14px;
+      font-size: 13.5px;
       text-transform: uppercase;
       letter-spacing: 1.2px;
       color: var(--text-muted);
@@ -199,14 +414,15 @@
     .card-subtext {
       font-size: 13px;
       color: var(--text-muted);
+      line-height: 1.4;
     }
 
     /* Failover Recovery Card */
     #recovery-card {
       display: none;
       grid-column: span 2;
-      background: rgba(185, 28, 28, 0.5);
-      border: 1px solid rgba(254, 202, 202, 0.4);
+      background: rgba(185, 28, 28, 0.55);
+      border: 1.5px solid rgba(254, 202, 202, 0.5);
       padding: 22px 26px;
       border-radius: 18px;
       backdrop-filter: blur(14px);
@@ -219,7 +435,7 @@
     }
 
     .recovery-time-val {
-      font-size: 32px;
+      font-size: 34px;
       color: #fef08a;
       font-family: 'JetBrains Mono', monospace;
       font-weight: 800;
@@ -236,7 +452,9 @@
       justify-content: space-around;
       text-align: center;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 14px;
+      font-size: 13px;
+      gap: 12px;
+      flex-wrap: wrap;
     }
 
     body.state-primary .telemetry-panel {
@@ -255,11 +473,42 @@
       margin-top: 6px;
       color: #fff;
     }
+
+    /* Diagnostic Inspection Strip */
+    .diagnostics-strip {
+      padding: 16px 20px;
+      border-radius: 16px;
+      background: rgba(15, 23, 42, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 13px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .diag-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .diag-label {
+      color: #94a3b8;
+    }
+
+    .diag-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
   </style>
 </head>
 <body id="page-body">
 
   <div class="container">
+    <!-- Header -->
     <header>
       <div class="brand-title">
         <span>🛡️</span>
@@ -267,36 +516,91 @@
       </div>
       <div class="live-badge">
         <span class="pulse-dot"></span>
-        <span id="system-status-indicator">MONITORING</span>
+        <span id="system-status-indicator">INITIALIZING...</span>
       </div>
     </header>
 
-    <!-- Warning Banner -->
+    <!-- Interactive Simulation Controls -->
+    <section class="control-panel" aria-label="Interactive Resilience Controls">
+      <div class="control-header">
+        <div class="control-heading">
+          <span>🎮</span>
+          <span>Resilience Simulation Controls</span>
+        </div>
+        <div id="mode-badge" class="mode-indicator">MODE: AUTO STREAM</div>
+      </div>
+
+      <div class="button-grid">
+        <!-- Button 1: Test Safe AI -->
+        <button id="btn-test-safe" class="sim-button btn-simulate-safe" type="button" title="Simulate normal edge AI inference with safe voltage">
+          <div class="button-icon">🟢</div>
+          <div class="button-text">
+            <span class="button-title">Simulate Safe AI Operation</span>
+            <span class="button-desc">AI predicts valid voltage (220V–240V). Hardware Watchdog passes & Primary AI retains control.</span>
+          </div>
+        </button>
+
+        <!-- Button 2: Test Unsafe AI Attack -->
+        <button id="btn-test-attack" class="sim-button btn-simulate-attack" type="button" title="Inject adversarial 5000V spike to trigger Hardware Watchdog shutdown">
+          <div class="button-icon">⚡</div>
+          <div class="button-text">
+            <span class="button-title">Inject Poisoned AI Attack (5000V)</span>
+            <span class="button-desc">AI commands catastrophic 5000V. Watchdog immediately shuts down AI commands & engages Fallback Microcontroller (210V).</span>
+          </div>
+        </button>
+      </div>
+
+      <div class="control-footer">
+        <button id="btn-auto-stream" class="btn-auto-stream active" type="button" title="Resume continuous automated telemetry stream">
+          <span>🔄</span>
+          <span>Resume Auto Stream</span>
+        </button>
+        <div id="action-feedback" class="action-feedback">Ready. Click either button to trigger a live test.</div>
+      </div>
+    </section>
+
+    <!-- Warning Banner (Shown on Attack / Failover) -->
     <div id="warning-banner" role="alert">
       SYSTEM COMPROMISED - FAIL-SAFE ENGAGED
     </div>
 
     <!-- Main Metrics -->
     <div class="metrics-grid">
-      <!-- Current Voltage -->
+      <!-- Current Applied Voltage -->
       <div class="card" id="voltage-card">
-        <div class="card-label">Current Voltage</div>
+        <div class="card-label">Current Applied Voltage</div>
         <div class="card-value" id="current-voltage">-- V</div>
-        <div class="card-subtext">Safe Hardware Window: 200V - 250V</div>
+        <div class="card-subtext">Safe Hardware Operating Limit: 200.0V - 250.0V</div>
       </div>
 
       <!-- Active Controller -->
       <div class="card" id="controller-card">
         <div class="card-label">Active Controller</div>
-        <div class="card-value" id="active-controller" style="font-size: 28px;">Connecting...</div>
+        <div class="card-value" id="active-controller" style="font-size: 27px;">Connecting...</div>
         <div class="card-subtext" id="controller-status-detail">Polling live node telemetry</div>
       </div>
 
       <!-- Failover Recovery Time (shown during failover) -->
       <div class="card" id="recovery-card">
-        <div class="card-label">Millisecond Recovery Time</div>
+        <div class="card-label">Sub-Millisecond Failover Latency</div>
         <div class="recovery-time-val" id="recovery-time">0.0000 ms</div>
-        <div class="card-subtext">Sub-millisecond failover triggered by Hardware Watchdog</div>
+        <div class="card-subtext">Hardware Watchdog intercepted malicious command and diverted power to Deterministic Fallback</div>
+      </div>
+    </div>
+
+    <!-- Diagnostic Inspection Strip -->
+    <div class="diagnostics-strip">
+      <div class="diag-item">
+        <span class="diag-label">Raw AI Output:</span>
+        <span class="diag-value" id="diag-raw-voltage">-- V</span>
+      </div>
+      <div class="diag-item">
+        <span class="diag-label">Watchdog Decision:</span>
+        <span class="diag-value" id="diag-watchdog-action">EVALUATING</span>
+      </div>
+      <div class="diag-item">
+        <span class="diag-label">Physical Hardware State:</span>
+        <span class="diag-value" id="diag-hardware-state">SECURE</span>
       </div>
     </div>
 
@@ -336,62 +640,158 @@
     const tempEl = document.getElementById('telemetry-temp');
     const watchdogEl = document.getElementById('telemetry-watchdog');
 
-    async function pollTelemetry() {
-      try {
-        const response = await fetch('/api/data');
-        if (!response.ok) return;
+    const diagRawVoltage = document.getElementById('diag-raw-voltage');
+    const diagWatchdogAction = document.getElementById('diag-watchdog-action');
+    const diagHardwareState = document.getElementById('diag-hardware-state');
 
-        const data = await response.json();
-        if (!data || data.active_controller === undefined) return;
+    const btnSafe = document.getElementById('btn-test-safe');
+    const btnAttack = document.getElementById('btn-test-attack');
+    const btnAuto = document.getElementById('btn-auto-stream');
+    const modeBadge = document.getElementById('mode-badge');
+    const actionFeedback = document.getElementById('action-feedback');
 
-        // 1. Update DOM: Current Voltage and Active Controller
-        voltageEl.textContent = `${data.applied_voltage} V`;
-        controllerEl.textContent = data.active_controller;
+    // Modes: 'auto' | 'safe' | 'attack'
+    let currentMode = 'auto';
+    let pollIntervalId = null;
 
-        // Telemetry details
-        if (data.iteration !== undefined) iterEl.textContent = `#${data.iteration}`;
-        if (data.grid_load !== undefined) gridEl.textContent = `${(data.grid_load * 100).toFixed(0)}%`;
-        if (data.battery_temp !== undefined) tempEl.textContent = `${data.battery_temp}°C`;
+    function updateModeUI(mode) {
+      currentMode = mode;
+      btnSafe.classList.toggle('active', mode === 'safe');
+      btnAttack.classList.toggle('active', mode === 'attack');
+      btnAuto.classList.toggle('active', mode === 'auto');
 
-        const controller = data.active_controller;
-        const isPrimary = controller === 'Primary AI' || controller === 'CompromisedAIController';
-        const isFallback = controller === 'Deterministic Fallback' || controller === 'DeterministicFallback';
-
-        // 2. State Logic
-        if (isPrimary) {
-          // Green background for Primary AI
-          bodyEl.classList.remove('state-fallback');
-          bodyEl.classList.add('state-primary');
-
-          bannerEl.style.display = 'none';
-          recoveryCardEl.style.display = 'none';
-          statusIndicator.textContent = 'SECURE (PRIMARY AI)';
-          controllerDetail.textContent = 'Edge AI neural output operational within bounds';
-          watchdogEl.textContent = 'VALID';
-          watchdogEl.style.color = '#34d399';
-        } else if (isFallback) {
-          // Flash red, trigger warning banner, display millisecond recovery time
-          bodyEl.classList.remove('state-primary');
-          bodyEl.classList.add('state-fallback');
-
-          bannerEl.style.display = 'block';
-          recoveryCardEl.style.display = 'block';
-
-          const failoverMs = data.failover_time !== undefined ? data.failover_time : data.failover_time_ms;
-          recoveryTimeEl.textContent = `${Number(failoverMs).toFixed(4)} ms`;
-
-          statusIndicator.textContent = 'CRITICAL FAILOVER';
-          controllerDetail.textContent = 'Hardware Watchdog engaged deterministic microcontroller';
-          watchdogEl.textContent = 'TRIPPED';
-          watchdogEl.style.color = '#fecaca';
-        }
-      } catch (error) {
-        console.error('Error fetching /api/data:', error);
+      modeBadge.className = 'mode-indicator';
+      if (mode === 'safe') {
+        modeBadge.textContent = 'MODE: SAFE TEST';
+        modeBadge.classList.add('mode-safe');
+      } else if (mode === 'attack') {
+        modeBadge.textContent = 'MODE: ATTACK TEST';
+        modeBadge.classList.add('mode-attack');
+      } else {
+        modeBadge.textContent = 'MODE: AUTO STREAM';
       }
     }
 
-    // Fetch every 500 milliseconds
-    setInterval(pollTelemetry, 500);
+    async function fetchTelemetry(mode) {
+      try {
+        const query = mode && mode !== 'auto' ? `?mode=${mode}` : '';
+        const response = await fetch(`/api/data${query}`);
+        if (!response.ok) return null;
+        return await response.json();
+      } catch (err) {
+        console.error('Fetch telemetry error:', err);
+        return null;
+      }
+    }
+
+    function renderTelemetry(data) {
+      if (!data || data.active_controller === undefined) return;
+
+      // 1. Voltage & Active Controller
+      voltageEl.textContent = `${Number(data.applied_voltage).toFixed(2)} V`;
+      controllerEl.textContent = data.active_controller;
+
+      // 2. Metrics & Telemetry Details
+      if (data.iteration !== undefined) iterEl.textContent = `#${data.iteration}`;
+      if (data.grid_load !== undefined) gridEl.textContent = `${(data.grid_load * 100).toFixed(0)}%`;
+      if (data.battery_temp !== undefined) tempEl.textContent = `${data.battery_temp}°C`;
+
+      const rawVoltage = data.raw_ai_voltage !== undefined ? Number(data.raw_ai_voltage).toFixed(2) : '--';
+      diagRawVoltage.textContent = `${rawVoltage} V`;
+
+      const isSafe = data.watchdog_passed === true;
+
+      // 3. State Management & Visuals
+      if (isSafe) {
+        // Safe: Green theme
+        bodyEl.classList.remove('state-fallback');
+        bodyEl.classList.add('state-primary');
+
+        bannerEl.style.display = 'none';
+        recoveryCardEl.style.display = 'none';
+
+        statusIndicator.textContent = 'SECURE (PRIMARY AI)';
+        controllerDetail.textContent = 'Edge AI neural output validated within physical boundaries (200V–250V)';
+
+        watchdogEl.textContent = 'VALID';
+        watchdogEl.style.color = '#34d399';
+
+        diagWatchdogAction.textContent = 'APPROVED';
+        diagWatchdogAction.style.color = '#34d399';
+
+        diagHardwareState.textContent = 'NORMAL OPERATION';
+        diagHardwareState.style.color = '#34d399';
+
+        if (currentMode === 'safe') {
+          actionFeedback.textContent = `🟢 [Safe Test]: AI commanded ${rawVoltage}V. Hardware Watchdog verified safe operating bounds. Primary AI retained.`;
+          actionFeedback.className = 'action-feedback safe';
+        }
+      } else {
+        // Compromised: Red flashing screen, warning banner, millisecond recovery
+        bodyEl.classList.remove('state-primary');
+        bodyEl.classList.add('state-fallback');
+
+        bannerEl.style.display = 'block';
+        recoveryCardEl.style.display = 'block';
+
+        const failoverMs = data.failover_time !== undefined ? data.failover_time : data.failover_time_ms;
+        recoveryTimeEl.textContent = `${Number(failoverMs).toFixed(4)} ms`;
+
+        statusIndicator.textContent = 'CRITICAL FAILOVER';
+        controllerDetail.textContent = 'Hardware Watchdog shut down AI commands & engaged deterministic microcontroller';
+
+        watchdogEl.textContent = 'TRIPPED';
+        watchdogEl.style.color = '#fecaca';
+
+        diagWatchdogAction.textContent = 'BLOCKED & SHUTDOWN';
+        diagWatchdogAction.style.color = '#f87171';
+
+        diagHardwareState.textContent = 'FAIL-SAFE ENGAGED (210V)';
+        diagHardwareState.style.color = '#fef08a';
+
+        if (currentMode === 'attack') {
+          actionFeedback.textContent = `⚡ [Attack Test]: AI attempted ${rawVoltage}V spike! Hardware Watchdog intercepted violation, shut down AI, & failed over to Safe Microcontroller in ${Number(failoverMs).toFixed(4)} ms.`;
+          actionFeedback.className = 'action-feedback attack';
+        }
+      }
+    }
+
+    async function pollTelemetry() {
+      const data = await fetchTelemetry(currentMode);
+      if (data) {
+        renderTelemetry(data);
+      }
+    }
+
+    // Button 1: Test Safe AI
+    btnSafe.addEventListener('click', async () => {
+      updateModeUI('safe');
+      actionFeedback.textContent = 'Evaluating safe edge AI voltage command (220V–240V)...';
+      actionFeedback.className = 'action-feedback safe';
+      const data = await fetchTelemetry('safe');
+      renderTelemetry(data);
+    });
+
+    // Button 2: Test Unsafe AI Attack
+    btnAttack.addEventListener('click', async () => {
+      updateModeUI('attack');
+      actionFeedback.textContent = 'Injecting 5000V adversarial command to test Hardware Watchdog shutdown...';
+      actionFeedback.className = 'action-feedback attack';
+      const data = await fetchTelemetry('attack');
+      renderTelemetry(data);
+    });
+
+    // Button 3: Resume Auto Stream
+    btnAuto.addEventListener('click', async () => {
+      updateModeUI('auto');
+      actionFeedback.textContent = '🔄 Resumed continuous auto telemetry stream.';
+      actionFeedback.className = 'action-feedback';
+      const data = await fetchTelemetry('auto');
+      renderTelemetry(data);
+    });
+
+    // Polling cycle: Fetch every 600ms
+    pollIntervalId = setInterval(pollTelemetry, 600);
     pollTelemetry();
   </script>
 </body>
