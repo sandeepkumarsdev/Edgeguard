@@ -30,25 +30,53 @@ if not HTML_PATH.exists():
     HTML_PATH = PROJECT_ROOT / "dashboard" / "templates" / "index.html"
 
 
-def generate_telemetry(force_mode=None):
+def generate_telemetry(force_mode=None, custom_voltage=None, custom_grid=None, custom_temp=None):
     global telemetry_step
     telemetry_step += 1
 
-    grid_load = round(random.uniform(0.0, 1.0), 2)
-    battery_temp = round(random.uniform(20.0, 60.0), 1)
+    # Grid load & battery temperature (use custom if provided, otherwise random edge telemetry)
+    if custom_grid is not None:
+        try:
+            grid_load = round(float(custom_grid), 2)
+        except (ValueError, TypeError):
+            grid_load = round(random.uniform(0.0, 1.0), 2)
+    else:
+        grid_load = round(random.uniform(0.0, 1.0), 2)
 
-    # 1. Determine raw AI command voltage based on mode
-    if force_mode == "safe":
+    if custom_temp is not None:
+        try:
+            battery_temp = round(float(custom_temp), 1)
+        except (ValueError, TypeError):
+            battery_temp = round(random.uniform(20.0, 60.0), 1)
+    else:
+        battery_temp = round(random.uniform(20.0, 60.0), 1)
+
+    # 1. Determine raw AI command voltage
+    if custom_voltage is not None:
+        try:
+            ai_voltage = round(float(custom_voltage), 2)
+            mode_name = "custom"
+        except (ValueError, TypeError):
+            ai_voltage = round(random.uniform(220.0, 240.0), 2)
+            mode_name = "safe"
+    elif force_mode == "safe":
         # Guaranteed safe command within 220V - 240V
         ai_voltage = baseline_ai.predict_voltage(grid_load, battery_temp)
+        mode_name = "safe"
     elif force_mode == "attack":
         # Adversarial poisoned AI command: dynamic random voltage strictly > 250V
         ai_voltage = ai_controller.generate_unsafe_voltage()
+        mode_name = "attack"
+    elif custom_grid is not None or custom_temp is not None:
+        # Predict based on provided telemetry values
+        ai_voltage = baseline_ai.predict_voltage(grid_load, battery_temp)
+        mode_name = "custom_telemetry"
     else:
         # Auto simulation (85% safe, 15% attack with dynamic >250V spikes)
         ai_voltage = ai_controller.predict_voltage(grid_load, battery_temp)
+        mode_name = "auto"
 
-    # 2. Hardware watchdog safety validation
+    # 2. Hardware watchdog safety validation (200.0V - 250.0V window)
     is_safe, validated_voltage = watchdog.validate_output(ai_voltage)
 
     if is_safe:
@@ -65,7 +93,7 @@ def generate_telemetry(force_mode=None):
 
     return jsonify({
         "iteration": telemetry_step,
-        "mode": force_mode or "auto",
+        "mode": mode_name,
         "active_controller": active_controller,
         "applied_voltage": applied_voltage,
         "raw_ai_voltage": ai_voltage,
@@ -83,7 +111,7 @@ def generate_telemetry(force_mode=None):
 @app.route("/", defaults={"path": ""}, methods=["GET", "POST"])
 @app.route("/<path:path>", methods=["GET", "POST"])
 def handle_all(path):
-    """Handles index HTML rendering, API telemetry, and interactive simulation tests."""
+    """Handles index HTML rendering, API telemetry, and custom data testing."""
     normalized = path.strip("/").lower()
 
     # Serve index HTML if requested
@@ -93,12 +121,19 @@ def handle_all(path):
                 return f.read(), 200, {"Content-Type": "text/html; charset=utf-8"}
         return "<h1>EdgeGuard Dashboard</h1>", 200
 
-    # Extract simulation mode parameter (e.g., ?mode=safe or ?mode=attack)
-    mode = request.args.get("mode")
-    if not mode and request.is_json and request.json:
-        mode = request.json.get("mode")
+    # Extract simulation parameters (support both GET query params and JSON payload)
+    json_data = request.json if request.is_json and request.json else {}
+    mode = request.args.get("mode", json_data.get("mode"))
+    voltage = request.args.get("voltage", json_data.get("voltage"))
+    grid_load = request.args.get("grid_load", json_data.get("grid_load"))
+    battery_temp = request.args.get("battery_temp", json_data.get("battery_temp"))
 
-    return generate_telemetry(force_mode=mode)
+    return generate_telemetry(
+        force_mode=mode,
+        custom_voltage=voltage,
+        custom_grid=grid_load,
+        custom_temp=battery_temp,
+    )
 
 
 if __name__ == "__main__":
