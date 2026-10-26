@@ -637,6 +637,158 @@
       font-weight: 800;
     }
 
+    /* Oscilloscope & Voltage Wavelength Card */
+    .waveform-card {
+      background: rgba(10, 17, 34, 0.75);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.4);
+      padding: 22px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .waveform-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .waveform-title-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .waveform-badge-icon {
+      font-size: 24px;
+      padding: 8px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 12px;
+    }
+
+    .waveform-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #f8fafc;
+      letter-spacing: 0.3px;
+    }
+
+    .waveform-subtitle {
+      font-size: 12px;
+      color: #94a3b8;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .waveform-metrics {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .wave-metric-pill {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      padding: 5px 11px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .wave-metric-pill .pill-label {
+      color: #94a3b8;
+      font-weight: 500;
+    }
+
+    .wave-metric-pill .pill-value {
+      color: #38bdf8;
+      font-weight: 700;
+    }
+
+    .canvas-container {
+      position: relative;
+      width: 100%;
+      height: 230px;
+      background: #030712;
+      border: 1.5px solid rgba(56, 189, 248, 0.2);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8);
+    }
+
+    #waveform-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .waveform-legend {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding-top: 6px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 11.5px;
+      color: #cbd5e1;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .legend-color-box {
+      width: 14px;
+      height: 4px;
+      border-radius: 2px;
+    }
+
+    .safe-box { background: #34d399; box-shadow: 0 0 6px #34d399; }
+    .limit-box { background: #f87171; border-top: 1px dashed #f87171; box-shadow: 0 0 6px #f87171; }
+    .fallback-box { background: #fbbf24; box-shadow: 0 0 6px #fbbf24; }
+    .attack-box { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
+
+    /* Diagnostic Inspection Strip */
+    .diagnostics-strip {
+      padding: 16px 20px;
+      border-radius: 16px;
+      background: rgba(15, 23, 42, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 13px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .diag-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .diag-label {
+      color: #94a3b8;
+    }
+
+    .diag-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+
     /* Telemetry Details Panel */
     .telemetry-panel {
       padding: 24px;
@@ -668,36 +820,6 @@
       font-size: 20px;
       margin-top: 6px;
       color: #fff;
-    }
-
-    /* Diagnostic Inspection Strip */
-    .diagnostics-strip {
-      padding: 16px 20px;
-      border-radius: 16px;
-      background: rgba(15, 23, 42, 0.45);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      font-size: 13px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-
-    .diag-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .diag-label {
-      color: #94a3b8;
-    }
-
-    .diag-value {
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 700;
-      color: #f1f5f9;
     }
   </style>
 </head>
@@ -833,6 +955,60 @@
       </div>
     </div>
 
+    <!-- Real-Time Voltage Waveform & Oscilloscope Analysis -->
+    <div class="card waveform-card">
+      <div class="waveform-header">
+        <div class="waveform-title-group">
+          <div class="waveform-badge-icon">📡</div>
+          <div>
+            <div class="waveform-title">Live AC Voltage Waveform & Oscilloscope Analysis</div>
+            <div class="waveform-subtitle">Sinusoidal Wavelength (&lambda;) Tracking • Physical Hardware Window [200.0V - 250.0V]</div>
+          </div>
+        </div>
+        <div class="waveform-metrics">
+          <div class="wave-metric-pill">
+            <span class="pill-label">Frequency:</span>
+            <span class="pill-value" id="wave-freq">0.0 Hz</span>
+          </div>
+          <div class="wave-metric-pill">
+            <span class="pill-label">Wavelength (&lambda;):</span>
+            <span class="pill-value" id="wave-lambda">-- ms</span>
+          </div>
+          <div class="wave-metric-pill">
+            <span class="pill-label">V_Peak:</span>
+            <span class="pill-value" id="wave-vpeak">0.0 V</span>
+          </div>
+          <div class="wave-metric-pill">
+            <span class="pill-label">Signal State:</span>
+            <span class="pill-value" id="wave-signal-state">STANDBY (0V)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="canvas-container">
+        <canvas id="waveform-canvas"></canvas>
+      </div>
+
+      <div class="waveform-legend">
+        <div class="legend-item">
+          <span class="legend-color-box safe-box"></span>
+          <span>Validated Output Waveform</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-color-box limit-box"></span>
+          <span>Watchdog Trip Boundary (&plusmn;250.0V Limit)</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-color-box fallback-box"></span>
+          <span>Deterministic Clamping (210.0V Fallback)</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-color-box attack-box"></span>
+          <span>Unsafe Command Breach Spike</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Diagnostic Inspection Strip -->
     <div class="diagnostics-strip">
       <div class="diag-item">
@@ -906,9 +1082,245 @@
     const btnRunCustom = document.getElementById('btn-submit-custom');
     const presetPills = document.querySelectorAll('.preset-pill');
 
+    // Oscilloscope & Wavelength Canvas Elements
+    const waveCanvas = document.getElementById('waveform-canvas');
+    const waveCtx = waveCanvas ? waveCanvas.getContext('2d') : null;
+    const waveFreqEl = document.getElementById('wave-freq');
+    const waveLambdaEl = document.getElementById('wave-lambda');
+    const waveVpeakEl = document.getElementById('wave-vpeak');
+    const waveSignalStateEl = document.getElementById('wave-signal-state');
+
     // Modes: 'standby' | 'safe' | 'ramp' | 'attack' | 'custom'
     let currentMode = 'standby';
     let rampSessionId = 0;
+
+    // Waveform rendering variables
+    let currentWaveVoltage = 0.0;
+    let targetWaveVoltage = 0.0;
+    let targetRawVoltage = 0.0;
+    let waveState = 'standby'; // 'standby' | 'safe' | 'attack'
+    let wavePhase = 0;
+
+    function setWaveformState(appliedV, isSafe, rawV) {
+      if (appliedV === 0 || appliedV === '0.00' || !appliedV) {
+        waveState = 'standby';
+        targetWaveVoltage = 0.0;
+        targetRawVoltage = 0.0;
+        waveFreqEl.textContent = '0.0 Hz';
+        waveLambdaEl.textContent = '-- ms';
+        waveVpeakEl.textContent = '0.0 V';
+        waveSignalStateEl.textContent = 'STANDBY (0V)';
+        waveSignalStateEl.style.color = '#94a3b8';
+      } else if (isSafe) {
+        waveState = 'safe';
+        targetWaveVoltage = Number(appliedV);
+        targetRawVoltage = Number(rawV || appliedV);
+        const vPeak = (targetWaveVoltage * Math.SQRT2).toFixed(1);
+        waveFreqEl.textContent = '50.0 Hz';
+        waveLambdaEl.textContent = '20.0 ms';
+        waveVpeakEl.textContent = `${vPeak} V`;
+        waveSignalStateEl.textContent = 'APPROVED (PRIMARY AI)';
+        waveSignalStateEl.style.color = '#34d399';
+      } else {
+        waveState = 'attack';
+        targetWaveVoltage = Number(appliedV);
+        targetRawVoltage = Number(rawV || appliedV);
+        const rawPeak = (targetRawVoltage * Math.SQRT2).toFixed(1);
+        waveFreqEl.textContent = '50.0 Hz (SURGE)';
+        waveLambdaEl.textContent = '20.0 ms';
+        waveVpeakEl.textContent = `${rawPeak} V (ATTACK)`;
+        waveSignalStateEl.textContent = 'TRIPPED & CLAMPED (210V)';
+        waveSignalStateEl.style.color = '#f87171';
+      }
+    }
+
+    function drawWaveform() {
+      if (!waveCanvas || !waveCtx) return;
+
+      const dpr = window.devicePixelRatio || 1;
+      const width = waveCanvas.clientWidth;
+      const height = waveCanvas.clientHeight;
+
+      if (waveCanvas.width !== Math.floor(width * dpr) || waveCanvas.height !== Math.floor(height * dpr)) {
+        waveCanvas.width = Math.floor(width * dpr);
+        waveCanvas.height = Math.floor(height * dpr);
+      }
+
+      waveCtx.save();
+      waveCtx.scale(dpr, dpr);
+      waveCtx.clearRect(0, 0, width, height);
+
+      // 1. Oscilloscope Background & Reticle Grid
+      waveCtx.fillStyle = '#030712';
+      waveCtx.fillRect(0, 0, width, height);
+
+      const centerY = height / 2;
+      const gridStep = 28;
+
+      waveCtx.lineWidth = 1;
+      waveCtx.strokeStyle = 'rgba(56, 189, 248, 0.07)';
+      waveCtx.beginPath();
+      for (let x = 0; x <= width; x += gridStep) {
+        waveCtx.moveTo(x, 0);
+        waveCtx.lineTo(x, height);
+      }
+      for (let y = 0; y <= height; y += gridStep) {
+        waveCtx.moveTo(0, y);
+        waveCtx.lineTo(width, y);
+      }
+      waveCtx.stroke();
+
+      // 2. Hardware Operating Safety Limit Lines (250V and 200V)
+      const scale = (height * 0.36) / 250.0;
+      const yUpper250 = centerY - (250.0 * scale);
+      const yLower250 = centerY + (250.0 * scale);
+      const yUpper200 = centerY - (200.0 * scale);
+      const yLower200 = centerY + (200.0 * scale);
+
+      // Draw 250V Trip Boundary (Dashed Red)
+      waveCtx.setLineDash([5, 4]);
+      waveCtx.strokeStyle = 'rgba(248, 113, 113, 0.7)';
+      waveCtx.lineWidth = 1.2;
+      waveCtx.beginPath();
+      waveCtx.moveTo(0, yUpper250);
+      waveCtx.lineTo(width, yUpper250);
+      waveCtx.moveTo(0, yLower250);
+      waveCtx.lineTo(width, yLower250);
+      waveCtx.stroke();
+
+      // Draw 200V Lower Safe Boundary (Dashed Emerald)
+      waveCtx.strokeStyle = 'rgba(52, 211, 153, 0.35)';
+      waveCtx.beginPath();
+      waveCtx.moveTo(0, yUpper200);
+      waveCtx.lineTo(width, yUpper200);
+      waveCtx.moveTo(0, yLower200);
+      waveCtx.lineTo(width, yLower200);
+      waveCtx.stroke();
+
+      // Center Ground Axis (0V)
+      waveCtx.setLineDash([2, 4]);
+      waveCtx.strokeStyle = 'rgba(148, 163, 184, 0.35)';
+      waveCtx.beginPath();
+      waveCtx.moveTo(0, centerY);
+      waveCtx.lineTo(width, centerY);
+      waveCtx.stroke();
+      waveCtx.setLineDash([]);
+
+      // Axis Labels
+      waveCtx.font = '10px "JetBrains Mono", monospace';
+      waveCtx.fillStyle = 'rgba(248, 113, 113, 0.9)';
+      waveCtx.fillText('+250V TRIP LIMIT', 10, yUpper250 - 4);
+      waveCtx.fillText('-250V TRIP LIMIT', 10, yLower250 + 12);
+      waveCtx.fillStyle = 'rgba(52, 211, 153, 0.8)';
+      waveCtx.fillText('+200V SAFE LOWER BOUND', width - 165, yUpper200 - 4);
+      waveCtx.fillStyle = 'rgba(148, 163, 184, 0.6)';
+      waveCtx.fillText('0V NEUTRAL AXIS', 10, centerY - 4);
+
+      // 3. Smooth Voltage Interpolation & Phase Advancement
+      currentWaveVoltage += (targetWaveVoltage - currentWaveVoltage) * 0.12;
+      wavePhase += 0.055;
+
+      // 4. Draw Waveform based on State
+      if (Math.abs(currentWaveVoltage) < 1.0) {
+        // STANDBY: Flat resting line at center
+        waveCtx.strokeStyle = '#475569';
+        waveCtx.lineWidth = 2;
+        waveCtx.shadowColor = '#64748b';
+        waveCtx.shadowBlur = 4;
+        waveCtx.beginPath();
+        waveCtx.moveTo(0, centerY);
+        waveCtx.lineTo(width, centerY);
+        waveCtx.stroke();
+        waveCtx.shadowBlur = 0;
+      } else if (waveState === 'safe') {
+        // SAFE MODE: Validated AC sine wave in emerald green
+        const amp = Math.min(currentWaveVoltage, 250.0) * scale;
+        const wavelengthPx = width / 3.4;
+
+        waveCtx.beginPath();
+        for (let x = 0; x <= width; x++) {
+          const y = centerY - amp * Math.sin((x / wavelengthPx) * Math.PI * 2 + wavePhase);
+          if (x === 0) waveCtx.moveTo(x, y);
+          else waveCtx.lineTo(x, y);
+        }
+
+        waveCtx.strokeStyle = '#34d399';
+        waveCtx.lineWidth = 2.5;
+        waveCtx.shadowColor = '#10b981';
+        waveCtx.shadowBlur = 12;
+        waveCtx.stroke();
+        waveCtx.shadowBlur = 0;
+
+        // Wavelength Lambda Indicator
+        const peakX1 = width * 0.25;
+        const peakX2 = peakX1 + wavelengthPx;
+        if (peakX2 < width - 40) {
+          waveCtx.strokeStyle = 'rgba(52, 211, 153, 0.45)';
+          waveCtx.lineWidth = 1;
+          waveCtx.setLineDash([2, 2]);
+          waveCtx.beginPath();
+          waveCtx.moveTo(peakX1, yUpper250 - 18);
+          waveCtx.lineTo(peakX2, yUpper250 - 18);
+          waveCtx.stroke();
+          waveCtx.setLineDash([]);
+          waveCtx.fillStyle = '#6ee7b7';
+          waveCtx.fillText('λ = 20.0ms (50Hz AC Cycle)', peakX1 + 10, yUpper250 - 22);
+        }
+      } else {
+        // ATTACK / OVERVOLTAGE BREACH MODE:
+        // Left segment (0% to 45%): Dangerous raw attack surge breaching above 250V limit in Red
+        // Middle trigger line: Sub-millisecond Watchdog Cutoff
+        // Right segment (45% to end): Instantaneously clamped to 210.0V fallback wave in Gold!
+        const splitX = width * 0.45;
+        const attackAmp = Math.min(Math.max(targetRawVoltage, 260.0) * scale, height * 0.48);
+        const clampAmp = 210.0 * scale;
+        const wavelengthPx = width / 3.4;
+
+        // 1. Raw overvoltage surge (Red)
+        waveCtx.beginPath();
+        for (let x = 0; x <= splitX; x++) {
+          const y = centerY - attackAmp * Math.sin((x / wavelengthPx) * Math.PI * 2 + wavePhase);
+          if (x === 0) waveCtx.moveTo(x, y);
+          else waveCtx.lineTo(x, y);
+        }
+        waveCtx.strokeStyle = '#ef4444';
+        waveCtx.lineWidth = 2.8;
+        waveCtx.shadowColor = '#ef4444';
+        waveCtx.shadowBlur = 14;
+        waveCtx.stroke();
+
+        // 2. Vertical Watchdog Cutoff Marker
+        waveCtx.strokeStyle = '#fef08a';
+        waveCtx.lineWidth = 2;
+        waveCtx.setLineDash([4, 2]);
+        waveCtx.beginPath();
+        waveCtx.moveTo(splitX, 15);
+        waveCtx.lineTo(splitX, height - 15);
+        waveCtx.stroke();
+        waveCtx.setLineDash([]);
+
+        waveCtx.fillStyle = '#fef08a';
+        waveCtx.font = 'bold 10px "JetBrains Mono", monospace';
+        waveCtx.fillText('⚡ WATCHDOG CUTOFF (<0.005ms)', splitX + 6, 25);
+
+        // 3. Clamped 210V fallback wave (Gold/Amber)
+        waveCtx.beginPath();
+        for (let x = splitX; x <= width; x++) {
+          const y = centerY - clampAmp * Math.sin((x / wavelengthPx) * Math.PI * 2 + wavePhase);
+          if (x === splitX) waveCtx.moveTo(x, y);
+          else waveCtx.lineTo(x, y);
+        }
+        waveCtx.strokeStyle = '#fbbf24';
+        waveCtx.lineWidth = 2.5;
+        waveCtx.shadowColor = '#f59e0b';
+        waveCtx.shadowBlur = 10;
+        waveCtx.stroke();
+        waveCtx.shadowBlur = 0;
+      }
+
+      waveCtx.restore();
+      requestAnimationFrame(drawWaveform);
+    }
 
     function updateModeUI(mode) {
       currentMode = mode;
@@ -937,6 +1349,7 @@
     function resetToZero() {
       rampSessionId++;
       updateModeUI('standby');
+      setWaveformState(0, false, 0);
 
       bodyEl.classList.remove('state-primary', 'state-fallback');
       bannerEl.style.display = 'none';
@@ -990,7 +1403,11 @@
       }
 
       const rawVoltage = data.raw_ai_voltage !== undefined ? Number(data.raw_ai_voltage).toFixed(2) : '0.00';
+      const appliedVoltage = data.applied_voltage !== undefined ? Number(data.applied_voltage).toFixed(2) : '0.00';
       const isSafe = data.watchdog_passed === true;
+
+      // Update Oscilloscope Canvas
+      setWaveformState(data.applied_voltage, isSafe, data.raw_ai_voltage);
 
       // 1. Controller and Diagnostic details
       controllerEl.textContent = data.active_controller;
@@ -1044,7 +1461,7 @@
         bannerEl.style.display = 'block';
         recoveryCardEl.style.display = 'block';
 
-        // Display the ATTACK VOLTAGE SPIKE prominently so user clearly sees dangerous voltage
+        // Display the ATTACK VOLTAGE SPIKE prominently
         voltageLabelEl.textContent = '⚡ Detected AI Attack Voltage (Unsafe Spike)';
         voltageEl.textContent = `${rawVoltage} V`;
         voltageEl.style.color = '#fef08a';
@@ -1191,8 +1608,11 @@
       });
     });
 
-    // Initial state: Start strictly with ZERO values. No autostream polling.
+    // Initial state: Start strictly with ZERO values.
     resetToZero();
+
+    // Start Oscilloscope animation loop
+    requestAnimationFrame(drawWaveform);
   </script>
 </body>
 </html>
