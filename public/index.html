@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EdgeGuard | Edge AI Resilience Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --color-green-bg: #064e3b;
+      --color-green-dark: #022c22;
+      --color-green-card: rgba(6, 78, 59, 0.45);
+      --color-green-border: rgba(52, 211, 153, 0.35);
+      --color-red-card: rgba(127, 29, 29, 0.5);
+      --color-red-border: rgba(248, 113, 113, 0.45);
+      --text-primary: #f8fafc;
+      --text-muted: #cbd5e1;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      color: var(--text-primary);
+      background-color: #0b1120;
+      background: radial-gradient(circle at 50% 25%, #0f172a 0%, #030712 100%);
+      transition: background-color 0.4s ease, background 0.4s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 20px;
+    }
+
+    /* State: Primary AI (Green Background) */
+    body.state-primary {
+      background-color: var(--color-green-bg);
+      background: radial-gradient(circle at 50% 25%, #047857 0%, var(--color-green-dark) 100%);
+    }
+
+    /* State: Deterministic Fallback (Flashing Red Screen) */
+    body.state-fallback {
+      animation: redFlash 0.7s infinite alternate ease-in-out;
+    }
+
+    @keyframes redFlash {
+      0% {
+        background-color: #450a0a;
+        background: radial-gradient(circle at 50% 30%, #7f1d1d 0%, #450a0a 100%);
+      }
+      100% {
+        background-color: #dc2626;
+        background: radial-gradient(circle at 50% 30%, #ef4444 0%, #991b1b 100%);
+      }
+    }
+
+    .container {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 26px;
+      border-radius: 18px;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .brand-title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .live-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #34d399;
+      box-shadow: 0 0 10px #34d399;
+      animation: pulse 1.5s infinite;
+    }
+
+    body.state-fallback .pulse-dot {
+      background: #fee2e2;
+      box-shadow: 0 0 10px #fee2e2;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    /* Warning Banner */
+    #warning-banner {
+      display: none;
+      background: linear-gradient(90deg, #991b1b, #ef4444, #991b1b);
+      color: #ffffff;
+      text-align: center;
+      padding: 20px 24px;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      border-radius: 16px;
+      border: 2px solid #fecaca;
+      box-shadow: 0 0 40px rgba(239, 68, 68, 0.85);
+      animation: bannerStrobe 0.8s infinite alternate;
+    }
+
+    @keyframes bannerStrobe {
+      0% { transform: scale(0.995); box-shadow: 0 0 25px rgba(239, 68, 68, 0.6); }
+      100% { transform: scale(1.015); box-shadow: 0 0 50px rgba(239, 68, 68, 1); }
+    }
+
+    /* Metrics Grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 650px) {
+      .metrics-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      padding: 26px;
+      border-radius: 20px;
+      background: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.25);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: all 0.3s ease;
+    }
+
+    body.state-primary .card {
+      background: var(--color-green-card);
+      border-color: var(--color-green-border);
+    }
+
+    body.state-fallback .card {
+      background: var(--color-red-card);
+      border-color: var(--color-red-border);
+    }
+
+    .card-label {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .card-value {
+      font-size: 38px;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: -0.5px;
+    }
+
+    .card-subtext {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* Failover Recovery Card */
+    #recovery-card {
+      display: none;
+      grid-column: span 2;
+      background: rgba(185, 28, 28, 0.5);
+      border: 1px solid rgba(254, 202, 202, 0.4);
+      padding: 22px 26px;
+      border-radius: 18px;
+      backdrop-filter: blur(14px);
+    }
+
+    @media (max-width: 650px) {
+      #recovery-card {
+        grid-column: span 1;
+      }
+    }
+
+    .recovery-time-val {
+      font-size: 32px;
+      color: #fef08a;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+    }
+
+    /* Telemetry Details Panel */
+    .telemetry-panel {
+      padding: 24px;
+      border-radius: 20px;
+      background: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      display: flex;
+      justify-content: space-around;
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+    }
+
+    body.state-primary .telemetry-panel {
+      background: var(--color-green-card);
+      border-color: var(--color-green-border);
+    }
+
+    body.state-fallback .telemetry-panel {
+      background: var(--color-red-card);
+      border-color: var(--color-red-border);
+    }
+
+    .telemetry-item strong {
+      display: block;
+      font-size: 20px;
+      margin-top: 6px;
+      color: #fff;
+    }
+  </style>
+</head>
+<body id="page-body">
+
+  <div class="container">
+    <header>
+      <div class="brand-title">
+        <span>🛡️</span>
+        <span>EdgeGuard System Node</span>
+      </div>
+      <div class="live-badge">
+        <span class="pulse-dot"></span>
+        <span id="system-status-indicator">MONITORING</span>
+      </div>
+    </header>
+
+    <!-- Warning Banner -->
+    <div id="warning-banner" role="alert">
+      SYSTEM COMPROMISED - FAIL-SAFE ENGAGED
+    </div>
+
+    <!-- Main Metrics -->
+    <div class="metrics-grid">
+      <!-- Current Voltage -->
+      <div class="card" id="voltage-card">
+        <div class="card-label">Current Voltage</div>
+        <div class="card-value" id="current-voltage">-- V</div>
+        <div class="card-subtext">Safe Hardware Window: 200V - 250V</div>
+      </div>
+
+      <!-- Active Controller -->
+      <div class="card" id="controller-card">
+        <div class="card-label">Active Controller</div>
+        <div class="card-value" id="active-controller" style="font-size: 28px;">Connecting...</div>
+        <div class="card-subtext" id="controller-status-detail">Polling live node telemetry</div>
+      </div>
+
+      <!-- Failover Recovery Time (shown during failover) -->
+      <div class="card" id="recovery-card">
+        <div class="card-label">Millisecond Recovery Time</div>
+        <div class="recovery-time-val" id="recovery-time">0.0000 ms</div>
+        <div class="card-subtext">Sub-millisecond failover triggered by Hardware Watchdog</div>
+      </div>
+    </div>
+
+    <!-- Telemetry Details -->
+    <div class="telemetry-panel">
+      <div class="telemetry-item">
+        Iteration
+        <strong id="telemetry-iteration">--</strong>
+      </div>
+      <div class="telemetry-item">
+        Grid Load
+        <strong id="telemetry-grid">--</strong>
+      </div>
+      <div class="telemetry-item">
+        Battery Temp
+        <strong id="telemetry-temp">--</strong>
+      </div>
+      <div class="telemetry-item">
+        Watchdog Status
+        <strong id="telemetry-watchdog">VERIFIED</strong>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const bodyEl = document.getElementById('page-body');
+    const voltageEl = document.getElementById('current-voltage');
+    const controllerEl = document.getElementById('active-controller');
+    const bannerEl = document.getElementById('warning-banner');
+    const recoveryCardEl = document.getElementById('recovery-card');
+    const recoveryTimeEl = document.getElementById('recovery-time');
+    const statusIndicator = document.getElementById('system-status-indicator');
+    const controllerDetail = document.getElementById('controller-status-detail');
+
+    const iterEl = document.getElementById('telemetry-iteration');
+    const gridEl = document.getElementById('telemetry-grid');
+    const tempEl = document.getElementById('telemetry-temp');
+    const watchdogEl = document.getElementById('telemetry-watchdog');
+
+    async function pollTelemetry() {
+      try {
+        const response = await fetch('/api/data');
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (!data || data.active_controller === undefined) return;
+
+        // 1. Update DOM: Current Voltage and Active Controller
+        voltageEl.textContent = `${data.applied_voltage} V`;
+        controllerEl.textContent = data.active_controller;
+
+        // Telemetry details
+        if (data.iteration !== undefined) iterEl.textContent = `#${data.iteration}`;
+        if (data.grid_load !== undefined) gridEl.textContent = `${(data.grid_load * 100).toFixed(0)}%`;
+        if (data.battery_temp !== undefined) tempEl.textContent = `${data.battery_temp}°C`;
+
+        const controller = data.active_controller;
+        const isPrimary = controller === 'Primary AI' || controller === 'CompromisedAIController';
+        const isFallback = controller === 'Deterministic Fallback' || controller === 'DeterministicFallback';
+
+        // 2. State Logic
+        if (isPrimary) {
+          // Green background for Primary AI
+          bodyEl.classList.remove('state-fallback');
+          bodyEl.classList.add('state-primary');
+
+          bannerEl.style.display = 'none';
+          recoveryCardEl.style.display = 'none';
+          statusIndicator.textContent = 'SECURE (PRIMARY AI)';
+          controllerDetail.textContent = 'Edge AI neural output operational within bounds';
+          watchdogEl.textContent = 'VALID';
+          watchdogEl.style.color = '#34d399';
+        } else if (isFallback) {
+          // Flash red, trigger warning banner, display millisecond recovery time
+          bodyEl.classList.remove('state-primary');
+          bodyEl.classList.add('state-fallback');
+
+          bannerEl.style.display = 'block';
+          recoveryCardEl.style.display = 'block';
+
+          const failoverMs = data.failover_time !== undefined ? data.failover_time : data.failover_time_ms;
+          recoveryTimeEl.textContent = `${Number(failoverMs).toFixed(4)} ms`;
+
+          statusIndicator.textContent = 'CRITICAL FAILOVER';
+          controllerDetail.textContent = 'Hardware Watchdog engaged deterministic microcontroller';
+          watchdogEl.textContent = 'TRIPPED';
+          watchdogEl.style.color = '#fecaca';
+        }
+      } catch (error) {
+        console.error('Error fetching /api/data:', error);
+      }
+    }
+
+    // Fetch every 500 milliseconds
+    setInterval(pollTelemetry, 500);
+    pollTelemetry();
+  </script>
+</body>
+</html>
