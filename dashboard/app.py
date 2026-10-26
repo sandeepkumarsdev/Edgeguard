@@ -49,7 +49,7 @@ def get_data():
     custom_temp = request.args.get("battery_temp", json_data.get("battery_temp"))
 
     has_test = (
-        mode in ["safe", "attack"]
+        mode in ["safe", "attack", "ramp"]
         or custom_voltage is not None
         or (custom_grid is not None and str(custom_grid).strip() != "")
         or (custom_temp is not None and str(custom_temp).strip() != "")
@@ -96,7 +96,7 @@ def get_data():
     if custom_voltage is not None and str(custom_voltage).strip() != "":
         try:
             ai_voltage = round(float(custom_voltage), 2)
-            mode_name = "custom"
+            mode_name = "custom" if mode != "ramp" else "ramp"
         except (ValueError, TypeError):
             ai_voltage = round(random.uniform(220.0, 240.0), 2)
             mode_name = "safe"
@@ -106,6 +106,10 @@ def get_data():
     elif mode == "attack":
         ai_voltage = ai_controller.generate_unsafe_voltage()
         mode_name = "attack"
+    elif mode == "ramp":
+        # Ramp default single test: boundary overvoltage breach
+        ai_voltage = round(random.uniform(255.0, 275.0), 2)
+        mode_name = "ramp"
     elif custom_grid is not None or custom_temp is not None:
         ai_voltage = baseline_ai.predict_voltage(grid_load, battery_temp)
         mode_name = "custom_telemetry"

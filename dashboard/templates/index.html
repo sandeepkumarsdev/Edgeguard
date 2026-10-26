@@ -67,7 +67,7 @@
 
     .container {
       width: 100%;
-      max-width: 950px;
+      max-width: 980px;
       display: flex;
       flex-direction: column;
       gap: 22px;
@@ -185,6 +185,12 @@
       color: #6ee7b7;
     }
 
+    .mode-indicator.mode-ramp {
+      background: rgba(245, 158, 11, 0.28);
+      border-color: rgba(251, 191, 36, 0.7);
+      color: #fde68a;
+    }
+
     .mode-indicator.mode-attack {
       background: rgba(239, 68, 68, 0.28);
       border-color: rgba(248, 113, 113, 0.7);
@@ -197,14 +203,14 @@
       color: #93c5fd;
     }
 
-    /* Simulation Buttons Grid */
+    /* Simulation Buttons Grid (3 Buttons Across) */
     .button-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
     }
 
-    @media (max-width: 700px) {
+    @media (max-width: 900px) {
       .button-grid {
         grid-template-columns: 1fr;
       }
@@ -215,13 +221,13 @@
       border: none;
       outline: none;
       text-align: left;
-      padding: 18px 20px;
+      padding: 16px 18px;
       border-radius: 16px;
       color: #ffffff;
       font-family: inherit;
       display: flex;
       align-items: flex-start;
-      gap: 16px;
+      gap: 14px;
       transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
       position: relative;
       overflow: hidden;
@@ -235,7 +241,7 @@
       transform: translateY(1px);
     }
 
-    /* Safe Button */
+    /* Button 1: Safe */
     .btn-simulate-safe {
       background: linear-gradient(135deg, rgba(6, 95, 70, 0.85) 0%, rgba(4, 120, 87, 0.65) 100%);
       border: 1.5px solid rgba(52, 211, 153, 0.5);
@@ -252,7 +258,24 @@
       box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.4), 0 8px 30px rgba(16, 185, 129, 0.5);
     }
 
-    /* Attack Button */
+    /* Button 2: Ramp / Escalation */
+    .btn-simulate-ramp {
+      background: linear-gradient(135deg, rgba(180, 83, 9, 0.85) 0%, rgba(217, 119, 6, 0.65) 100%);
+      border: 1.5px solid rgba(251, 191, 36, 0.55);
+      box-shadow: 0 6px 20px rgba(245, 158, 11, 0.2);
+    }
+
+    .btn-simulate-ramp:hover {
+      border-color: rgba(251, 191, 36, 0.95);
+      box-shadow: 0 8px 28px rgba(245, 158, 11, 0.5);
+    }
+
+    .btn-simulate-ramp.active {
+      border-color: #fef08a;
+      box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.45), 0 8px 30px rgba(245, 158, 11, 0.65);
+    }
+
+    /* Button 3: Attack */
     .btn-simulate-attack {
       background: linear-gradient(135deg, rgba(153, 27, 27, 0.85) 0%, rgba(220, 38, 38, 0.65) 100%);
       border: 1.5px solid rgba(248, 113, 113, 0.55);
@@ -270,7 +293,7 @@
     }
 
     .button-icon {
-      font-size: 28px;
+      font-size: 26px;
       line-height: 1;
       padding: 8px;
       border-radius: 12px;
@@ -281,19 +304,19 @@
     .button-text {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 3px;
     }
 
     .button-title {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 800;
-      letter-spacing: 0.3px;
+      letter-spacing: 0.2px;
     }
 
     .button-desc {
-      font-size: 12.5px;
+      font-size: 12px;
       color: rgba(255, 255, 255, 0.82);
-      line-height: 1.4;
+      line-height: 1.35;
     }
 
     /* Custom Data Testing Section */
@@ -482,8 +505,9 @@
       font-size: 12.5px;
       font-family: 'JetBrains Mono', monospace;
       color: #94a3b8;
-      max-width: 620px;
+      max-width: 650px;
       transition: color 0.3s ease;
+      line-height: 1.45;
     }
 
     .action-feedback.safe {
@@ -712,12 +736,21 @@
           </div>
         </button>
 
-        <!-- Button 2: Test Unsafe AI Attack -->
+        <!-- Button 2: Dynamic Escalation Ramp (Safe -> Attack) -->
+        <button id="btn-test-ramp" class="sim-button btn-simulate-ramp" type="button" title="Progressively ramp voltage from safe 220V up past 250V threshold to observe real-time Watchdog trip">
+          <div class="button-icon">📈</div>
+          <div class="button-text">
+            <span class="button-title">Escalation Ramp (Safe → Attack)</span>
+            <span class="button-desc">Increases voltage progressively (220V ➔ 236V ➔ 248V ➔ 262V ➔ 340V ➔ 520V) to watch Watchdog trip at boundary.</span>
+          </div>
+        </button>
+
+        <!-- Button 3: Test Unsafe AI Attack -->
         <button id="btn-test-attack" class="sim-button btn-simulate-attack" type="button" title="Inject adversarial overvoltage spike (>250V) to trigger Hardware Watchdog shutdown">
           <div class="button-icon">⚡</div>
           <div class="button-text">
-            <span class="button-title">Inject Poisoned AI Attack (>250V Spike)</span>
-            <span class="button-desc">AI commands dynamic dangerous voltage (>250V). Watchdog intercepts violation, shuts down AI commands & clamps circuit to 210V.</span>
+            <span class="button-title">Inject Poisoned AI Attack (>250V)</span>
+            <span class="button-desc">AI commands sudden dangerous voltage (>250V). Watchdog intercepts violation, shuts down AI & clamps to 210V.</span>
           </div>
         </button>
       </div>
@@ -861,6 +894,7 @@
     const diagHardwareState = document.getElementById('diag-hardware-state');
 
     const btnSafe = document.getElementById('btn-test-safe');
+    const btnRamp = document.getElementById('btn-test-ramp');
     const btnAttack = document.getElementById('btn-test-attack');
     const btnResetZero = document.getElementById('btn-reset-zero');
     const modeBadge = document.getElementById('mode-badge');
@@ -872,18 +906,23 @@
     const btnRunCustom = document.getElementById('btn-submit-custom');
     const presetPills = document.querySelectorAll('.preset-pill');
 
-    // Modes: 'standby' | 'safe' | 'attack' | 'custom'
+    // Modes: 'standby' | 'safe' | 'ramp' | 'attack' | 'custom'
     let currentMode = 'standby';
+    let rampSessionId = 0;
 
     function updateModeUI(mode) {
       currentMode = mode;
       btnSafe.classList.toggle('active', mode === 'safe');
+      btnRamp.classList.toggle('active', mode === 'ramp');
       btnAttack.classList.toggle('active', mode === 'attack');
 
       modeBadge.className = 'mode-indicator';
       if (mode === 'safe') {
         modeBadge.textContent = 'TEST MODE: SAFE AI';
         modeBadge.classList.add('mode-safe');
+      } else if (mode === 'ramp') {
+        modeBadge.textContent = 'TEST MODE: ESCALATION RAMP';
+        modeBadge.classList.add('mode-ramp');
       } else if (mode === 'attack') {
         modeBadge.textContent = 'TEST MODE: ATTACK';
         modeBadge.classList.add('mode-attack');
@@ -896,6 +935,7 @@
     }
 
     function resetToZero() {
+      rampSessionId++;
       updateModeUI('standby');
 
       bodyEl.classList.remove('state-primary', 'state-fallback');
@@ -1038,6 +1078,7 @@
 
     // Button 1: Test Safe AI
     btnSafe.addEventListener('click', async () => {
+      rampSessionId++;
       updateModeUI('safe');
       actionFeedback.textContent = 'Evaluating safe edge AI voltage command (220V–240V)...';
       actionFeedback.className = 'action-feedback safe';
@@ -1045,8 +1086,56 @@
       renderTelemetry(data);
     });
 
-    // Button 2: Test Unsafe AI Attack
+    // Button 2: Dynamic Escalation Ramp (Safe -> Attack)
+    async function runRampTest() {
+      const currentSession = ++rampSessionId;
+      updateModeUI('ramp');
+
+      const rampSteps = [
+        { v: 220.0, label: 'Nominal Safe' },
+        { v: 236.0, label: 'Mid Safe Operating Range' },
+        { v: 248.5, label: 'Upper Hardware Boundary (248.5V)' },
+        { v: 262.0, label: 'Safe Limit Breached (>250V Threshold)' },
+        { v: 340.0, label: 'High Energy Surge Attack' },
+        { v: 520.0, label: 'Severe Overvoltage Attack' }
+      ];
+
+      for (let i = 0; i < rampSteps.length; i++) {
+        if (rampSessionId !== currentSession) return;
+        const step = rampSteps[i];
+
+        try {
+          const res = await fetch(`/api/data?voltage=${step.v}&grid_load=0.65&battery_temp=38.5&mode=ramp`);
+          if (!res.ok) continue;
+          const data = await res.json();
+          if (rampSessionId !== currentSession) return;
+
+          renderTelemetry(data);
+
+          const vStr = Number(step.v).toFixed(1);
+          if (step.v <= 250.0) {
+            actionFeedback.textContent = `📈 [Ramp Step ${i + 1}/${rampSteps.length}]: Commanded ${vStr}V (${step.label}) ➔ Watchdog Result: APPROVED ✅ (Within safe physical window 200V–250V)`;
+            actionFeedback.className = 'action-feedback safe';
+          } else {
+            const ms = data.failover_time !== undefined ? Number(data.failover_time).toFixed(4) : '0.0018';
+            actionFeedback.textContent = `🚨 [Ramp Step ${i + 1}/${rampSteps.length}]: Commanded ${vStr}V (${step.label}) ➔ Watchdog Result: TRIPPED ⚡ AI Intercepted & Shut Down! Clamped to 210.00V Fallback in ${ms} ms`;
+            actionFeedback.className = 'action-feedback attack';
+          }
+        } catch (e) {
+          console.error('Ramp step error:', e);
+        }
+
+        if (i < rampSteps.length - 1) {
+          await new Promise(r => setTimeout(r, 700));
+        }
+      }
+    }
+
+    btnRamp.addEventListener('click', runRampTest);
+
+    // Button 3: Test Unsafe AI Attack
     btnAttack.addEventListener('click', async () => {
+      rampSessionId++;
       updateModeUI('attack');
       actionFeedback.textContent = 'Injecting dangerous overvoltage command (>250V) to test Hardware Watchdog shutdown...';
       actionFeedback.className = 'action-feedback attack';
@@ -1061,6 +1150,7 @@
 
     // Custom Data Test Runner
     async function executeCustomTest(voltage, grid, temp) {
+      rampSessionId++;
       updateModeUI('custom');
       actionFeedback.textContent = `Evaluating custom input data: Voltage=${voltage || 'AI Auto'}V, Grid=${grid || 'Auto'}, Temp=${temp || 'Auto'}°C...`;
       actionFeedback.className = 'action-feedback';

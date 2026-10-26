@@ -34,7 +34,7 @@ def generate_telemetry(force_mode=None, custom_voltage=None, custom_grid=None, c
     global test_step
 
     has_test = (
-        force_mode in ["safe", "attack"]
+        force_mode in ["safe", "attack", "ramp"]
         or custom_voltage is not None
         or (custom_grid is not None and str(custom_grid).strip() != "")
         or (custom_temp is not None and str(custom_temp).strip() != "")
@@ -80,7 +80,7 @@ def generate_telemetry(force_mode=None, custom_voltage=None, custom_grid=None, c
     if custom_voltage is not None and str(custom_voltage).strip() != "":
         try:
             ai_voltage = round(float(custom_voltage), 2)
-            mode_name = "custom"
+            mode_name = "custom" if force_mode != "ramp" else "ramp"
         except (ValueError, TypeError):
             ai_voltage = round(random.uniform(220.0, 240.0), 2)
             mode_name = "safe"
@@ -90,6 +90,9 @@ def generate_telemetry(force_mode=None, custom_voltage=None, custom_grid=None, c
     elif force_mode == "attack":
         ai_voltage = ai_controller.generate_unsafe_voltage()
         mode_name = "attack"
+    elif force_mode == "ramp":
+        ai_voltage = round(random.uniform(255.0, 275.0), 2)
+        mode_name = "ramp"
     elif custom_grid is not None or custom_temp is not None:
         ai_voltage = baseline_ai.predict_voltage(grid_load, battery_temp)
         mode_name = "custom_telemetry"
