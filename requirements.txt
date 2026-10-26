@@ -1,4 +1,1 @@
-tensorflow
-numpy
-flask
-pandas
+Flask>=3.0.0
