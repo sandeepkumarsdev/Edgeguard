@@ -4,7 +4,7 @@ import random
 import sys
 import time
 from pathlib import Path
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify, request
 
 # Ensure project root is in sys.path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -28,20 +28,7 @@ if not HTML_PATH.exists():
     HTML_PATH = PROJECT_ROOT / "dashboard" / "templates" / "index.html"
 
 
-@app.route("/")
-@app.route("/api/index")
-def index():
-    """Serves the dashboard index HTML."""
-    if HTML_PATH.exists():
-        with open(HTML_PATH, "r", encoding="utf-8") as f:
-            return f.read(), 200, {"Content-Type": "text/html"}
-    return "<h1>EdgeGuard Dashboard</h1>", 200
-
-
-@app.route("/api/data")
-@app.route("/api/index/api/data")
-def get_data():
-    """Generates and returns dynamic telemetry tick."""
+def generate_telemetry():
     global telemetry_step
     telemetry_step += 1
 
@@ -74,6 +61,21 @@ def get_data():
         "watchdog_passed": is_safe,
         "timestamp": round(time.time(), 3),
     })
+
+
+@app.route("/", defaults={"path": ""})
+@app.route("/<path:path>")
+def handle_all(path):
+    """Handles both index HTML rendering and telemetry JSON."""
+    normalized = path.strip("/").lower()
+    if normalized in ["", "index", "index.html"]:
+        if HTML_PATH.exists():
+            with open(HTML_PATH, "r", encoding="utf-8") as f:
+                return f.read(), 200, {"Content-Type": "text/html; charset=utf-8"}
+        return "<h1>EdgeGuard Dashboard</h1>", 200
+
+    # For any /api/*, /api/data, /api/index, or /api/index.py
+    return generate_telemetry()
 
 
 if __name__ == "__main__":
