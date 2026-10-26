@@ -112,6 +112,12 @@
       width: 9px;
       height: 9px;
       border-radius: 50%;
+      background: #94a3b8;
+      box-shadow: 0 0 8px rgba(148, 163, 184, 0.6);
+      transition: all 0.3s ease;
+    }
+
+    body.state-primary .pulse-dot {
       background: var(--emerald-400);
       box-shadow: 0 0 10px var(--emerald-400);
       animation: pulse 1.5s infinite;
@@ -120,6 +126,7 @@
     body.state-fallback .pulse-dot {
       background: #fee2e2;
       box-shadow: 0 0 12px #fee2e2;
+      animation: pulse 0.75s infinite;
     }
 
     @keyframes pulse {
@@ -449,7 +456,7 @@
       border-top: 1px solid rgba(255, 255, 255, 0.08);
     }
 
-    .btn-auto-stream {
+    .btn-reset-standby {
       cursor: pointer;
       border: 1px solid rgba(255, 255, 255, 0.18);
       background: rgba(255, 255, 255, 0.06);
@@ -465,16 +472,10 @@
       gap: 6px;
     }
 
-    .btn-auto-stream:hover {
+    .btn-reset-standby:hover {
       background: rgba(255, 255, 255, 0.14);
       color: #ffffff;
       border-color: rgba(255, 255, 255, 0.3);
-    }
-
-    .btn-auto-stream.active {
-      background: rgba(56, 189, 248, 0.18);
-      border-color: rgba(56, 189, 248, 0.5);
-      color: #bae6fd;
     }
 
     .action-feedback {
@@ -687,7 +688,7 @@
       </div>
       <div class="live-badge">
         <span class="pulse-dot"></span>
-        <span id="system-status-indicator">INITIALIZING...</span>
+        <span id="system-status-indicator">STANDBY (0V)</span>
       </div>
     </header>
 
@@ -698,7 +699,7 @@
           <span>🎮</span>
           <span>Resilience Simulation Controls</span>
         </div>
-        <div id="mode-badge" class="mode-indicator">MODE: AUTO STREAM</div>
+        <div id="mode-badge" class="mode-indicator">STATUS: STANDBY</div>
       </div>
 
       <div class="button-grid">
@@ -758,16 +759,16 @@
       </div>
 
       <div class="control-footer">
-        <button id="btn-auto-stream" class="btn-auto-stream active" type="button" title="Resume continuous automated telemetry stream">
-          <span>🔄</span>
-          <span>Resume Auto Stream</span>
+        <button id="btn-reset-zero" class="btn-reset-standby" type="button" title="Reset all telemetry metrics to zero / standby state">
+          <span>⏮️</span>
+          <span>Reset to Zero (Standby)</span>
         </button>
-        <div id="action-feedback" class="action-feedback">Ready. Click either button or test custom telemetry vectors above.</div>
+        <div id="action-feedback" class="action-feedback">System in Standby. All values zero. Click a button above to run a test.</div>
       </div>
     </section>
 
     <!-- Warning Banner (Shown on Attack / Failover) -->
-    <div id="warning-banner" role="alert">
+    <div id="warning-banner" role="alert" style="display: none;">
       SYSTEM COMPROMISED - FAIL-SAFE ENGAGED
     </div>
 
@@ -776,7 +777,7 @@
       <!-- Voltage Display Card -->
       <div class="card" id="voltage-card">
         <div class="card-label" id="voltage-card-label">Current Monitored Voltage</div>
-        <div class="card-value" id="current-voltage">-- V</div>
+        <div class="card-value" id="current-voltage">0.00 V</div>
         <div class="card-subtext" id="voltage-card-subtext">Safe Hardware Operating Limit: 200.0V - 250.0V</div>
         <div id="voltage-protection-banner" class="voltage-protection-banner" style="display: none;">
           <span>🔒</span>
@@ -787,12 +788,12 @@
       <!-- Active Controller -->
       <div class="card" id="controller-card">
         <div class="card-label">Active Controller</div>
-        <div class="card-value" id="active-controller" style="font-size: 27px;">Connecting...</div>
-        <div class="card-subtext" id="controller-status-detail">Polling live node telemetry</div>
+        <div class="card-value" id="active-controller" style="font-size: 27px;">Standby</div>
+        <div class="card-subtext" id="controller-status-detail">Waiting for user test action</div>
       </div>
 
       <!-- Failover Recovery Time (shown during failover) -->
-      <div class="card" id="recovery-card">
+      <div class="card" id="recovery-card" style="display: none;">
         <div class="card-label">Sub-Millisecond Failover Latency</div>
         <div class="recovery-time-val" id="recovery-time">0.0000 ms</div>
         <div class="card-subtext">Hardware Watchdog intercepted malicious command and diverted power to Deterministic Fallback</div>
@@ -803,15 +804,15 @@
     <div class="diagnostics-strip">
       <div class="diag-item">
         <span class="diag-label">Raw AI Command:</span>
-        <span class="diag-value" id="diag-raw-voltage">-- V</span>
+        <span class="diag-value" id="diag-raw-voltage">0.00 V</span>
       </div>
       <div class="diag-item">
         <span class="diag-label">Watchdog Decision:</span>
-        <span class="diag-value" id="diag-watchdog-action">EVALUATING</span>
+        <span class="diag-value" id="diag-watchdog-action">STANDBY</span>
       </div>
       <div class="diag-item">
         <span class="diag-label">Physical Hardware State:</span>
-        <span class="diag-value" id="diag-hardware-state">SECURE</span>
+        <span class="diag-value" id="diag-hardware-state">IDLE (0V)</span>
       </div>
     </div>
 
@@ -819,19 +820,19 @@
     <div class="telemetry-panel">
       <div class="telemetry-item">
         Iteration
-        <strong id="telemetry-iteration">--</strong>
+        <strong id="telemetry-iteration">0</strong>
       </div>
       <div class="telemetry-item">
         Grid Load
-        <strong id="telemetry-grid">--</strong>
+        <strong id="telemetry-grid">0%</strong>
       </div>
       <div class="telemetry-item">
         Battery Temp
-        <strong id="telemetry-temp">--</strong>
+        <strong id="telemetry-temp">0°C</strong>
       </div>
       <div class="telemetry-item">
         Watchdog Status
-        <strong id="telemetry-watchdog">VERIFIED</strong>
+        <strong id="telemetry-watchdog">STANDBY</strong>
       </div>
     </div>
   </div>
@@ -861,7 +862,7 @@
 
     const btnSafe = document.getElementById('btn-test-safe');
     const btnAttack = document.getElementById('btn-test-attack');
-    const btnAuto = document.getElementById('btn-auto-stream');
+    const btnResetZero = document.getElementById('btn-reset-zero');
     const modeBadge = document.getElementById('mode-badge');
     const actionFeedback = document.getElementById('action-feedback');
 
@@ -871,34 +872,66 @@
     const btnRunCustom = document.getElementById('btn-submit-custom');
     const presetPills = document.querySelectorAll('.preset-pill');
 
-    // Modes: 'auto' | 'safe' | 'attack' | 'custom'
-    let currentMode = 'auto';
-    let pollIntervalId = null;
+    // Modes: 'standby' | 'safe' | 'attack' | 'custom'
+    let currentMode = 'standby';
 
     function updateModeUI(mode) {
       currentMode = mode;
       btnSafe.classList.toggle('active', mode === 'safe');
       btnAttack.classList.toggle('active', mode === 'attack');
-      btnAuto.classList.toggle('active', mode === 'auto');
 
       modeBadge.className = 'mode-indicator';
       if (mode === 'safe') {
-        modeBadge.textContent = 'MODE: SAFE TEST';
+        modeBadge.textContent = 'TEST MODE: SAFE AI';
         modeBadge.classList.add('mode-safe');
       } else if (mode === 'attack') {
-        modeBadge.textContent = 'MODE: ATTACK TEST';
+        modeBadge.textContent = 'TEST MODE: ATTACK';
         modeBadge.classList.add('mode-attack');
       } else if (mode === 'custom') {
-        modeBadge.textContent = 'MODE: CUSTOM DATA TEST';
+        modeBadge.textContent = 'TEST MODE: CUSTOM DATA';
         modeBadge.classList.add('mode-custom');
       } else {
-        modeBadge.textContent = 'MODE: AUTO STREAM';
+        modeBadge.textContent = 'STATUS: STANDBY';
       }
+    }
+
+    function resetToZero() {
+      updateModeUI('standby');
+
+      bodyEl.classList.remove('state-primary', 'state-fallback');
+      bannerEl.style.display = 'none';
+      recoveryCardEl.style.display = 'none';
+      protectionBannerEl.style.display = 'none';
+
+      voltageLabelEl.textContent = 'Current Monitored Voltage';
+      voltageEl.textContent = '0.00 V';
+      voltageEl.style.color = '#ffffff';
+      voltageSubtextEl.textContent = 'Safe Hardware Operating Limit: 200.0V - 250.0V';
+
+      controllerEl.textContent = 'Standby';
+      controllerDetail.textContent = 'Waiting for user test action';
+      statusIndicator.textContent = 'STANDBY (0V)';
+
+      diagRawVoltage.textContent = '0.00 V';
+      diagWatchdogAction.textContent = 'STANDBY';
+      diagWatchdogAction.style.color = '#cbd5e1';
+      diagHardwareState.textContent = 'IDLE (0V)';
+      diagHardwareState.style.color = '#cbd5e1';
+
+      iterEl.textContent = '0';
+      gridEl.textContent = '0%';
+      tempEl.textContent = '0°C';
+      watchdogEl.textContent = 'STANDBY';
+      watchdogEl.style.color = '#cbd5e1';
+      recoveryTimeEl.textContent = '0.0000 ms';
+
+      actionFeedback.textContent = 'System in Standby. All values zero. Click a button above to run a test.';
+      actionFeedback.className = 'action-feedback';
     }
 
     async function fetchTelemetry(mode) {
       try {
-        const query = mode && mode !== 'auto' && mode !== 'custom' ? `?mode=${mode}` : '';
+        const query = mode && mode !== 'standby' ? `?mode=${mode}` : '';
         const response = await fetch(`/api/data${query}`);
         if (!response.ok) return null;
         return await response.json();
@@ -911,8 +944,12 @@
     function renderTelemetry(data) {
       if (!data || data.active_controller === undefined) return;
 
-      const rawVoltage = data.raw_ai_voltage !== undefined ? Number(data.raw_ai_voltage).toFixed(2) : '--';
-      const appliedVoltage = data.applied_voltage !== undefined ? Number(data.applied_voltage).toFixed(2) : '--';
+      if (data.mode === 'standby') {
+        resetToZero();
+        return;
+      }
+
+      const rawVoltage = data.raw_ai_voltage !== undefined ? Number(data.raw_ai_voltage).toFixed(2) : '0.00';
       const isSafe = data.watchdog_passed === true;
 
       // 1. Controller and Diagnostic details
@@ -967,7 +1004,7 @@
         bannerEl.style.display = 'block';
         recoveryCardEl.style.display = 'block';
 
-        // Display the ATTACK VOLTAGE SPIKE prominently so the user clearly sees the dangerous voltage
+        // Display the ATTACK VOLTAGE SPIKE prominently so user clearly sees dangerous voltage
         voltageLabelEl.textContent = '⚡ Detected AI Attack Voltage (Unsafe Spike)';
         voltageEl.textContent = `${rawVoltage} V`;
         voltageEl.style.color = '#fef08a';
@@ -990,20 +1027,12 @@
         diagHardwareState.style.color = '#fef08a';
 
         if (currentMode === 'attack') {
-          actionFeedback.textContent = `⚡ [Attack Test]: AI attempted ${rawVoltage}V spike (>250V safe limit)! Hardware Watchdog intercepted command, shut down AI, & clamped power to 210.00V Fallback in ${Number(failoverMs).toFixed(4)} ms.`;
+          actionFeedback.textContent = `⚡ [Attack Test]: AI attempted ${rawVoltage}V spike (>250V safe limit)! Hardware Watchdog intercepted command, shut down AI, & clamped circuit to 210.00V Fallback in ${Number(failoverMs).toFixed(4)} ms.`;
           actionFeedback.className = 'action-feedback attack';
         } else if (currentMode === 'custom') {
           actionFeedback.textContent = `🚨 [Custom Test Tripped]: Input ${rawVoltage}V violated hardware limits! Watchdog cut off command & clamped circuit to 210.00V in ${Number(failoverMs).toFixed(4)} ms.`;
           actionFeedback.className = 'action-feedback attack';
         }
-      }
-    }
-
-    async function pollTelemetry() {
-      if (currentMode === 'custom') return; // Keep custom test frozen on screen until user changes mode
-      const data = await fetchTelemetry(currentMode);
-      if (data) {
-        renderTelemetry(data);
       }
     }
 
@@ -1025,13 +1054,9 @@
       renderTelemetry(data);
     });
 
-    // Button 3: Resume Auto Stream
-    btnAuto.addEventListener('click', async () => {
-      updateModeUI('auto');
-      actionFeedback.textContent = '🔄 Resumed continuous auto telemetry stream.';
-      actionFeedback.className = 'action-feedback';
-      const data = await fetchTelemetry('auto');
-      renderTelemetry(data);
+    // Button: Reset to Zero
+    btnResetZero.addEventListener('click', () => {
+      resetToZero();
     });
 
     // Custom Data Test Runner
@@ -1076,9 +1101,8 @@
       });
     });
 
-    // Polling cycle: Fetch every 600ms
-    pollIntervalId = setInterval(pollTelemetry, 600);
-    pollTelemetry();
+    // Initial state: Start strictly with ZERO values. No autostream polling.
+    resetToZero();
   </script>
 </body>
 </html>

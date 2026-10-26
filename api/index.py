@@ -18,12 +18,12 @@ from watchdog.validator import HardwareWatchdog
 
 app = Flask(__name__)
 
-# State controllers for dynamic real-time telemetry simulation
+# State controllers for on-demand test execution
 baseline_ai = EdgeAIController()
 ai_controller = CompromisedAIController()
 watchdog = HardwareWatchdog()
 fallback = DeterministicFallback()
-telemetry_step = 0
+test_step = 0
 
 HTML_PATH = PROJECT_ROOT / "public" / "index.html"
 if not HTML_PATH.exists():
@@ -31,28 +31,53 @@ if not HTML_PATH.exists():
 
 
 def generate_telemetry(force_mode=None, custom_voltage=None, custom_grid=None, custom_temp=None):
-    global telemetry_step
-    telemetry_step += 1
+    global test_step
 
-    # Grid load & battery temperature (use custom if provided, otherwise random edge telemetry)
-    if custom_grid is not None:
+    has_test = (
+        force_mode in ["safe", "attack"]
+        or custom_voltage is not None
+        or (custom_grid is not None and str(custom_grid).strip() != "")
+        or (custom_temp is not None and str(custom_temp).strip() != "")
+    )
+
+    # Standby / zero response if no test requested
+    if not has_test or force_mode in ["standby", "reset"]:
+        return jsonify({
+            "iteration": 0,
+            "mode": "standby",
+            "active_controller": "Standby",
+            "applied_voltage": 0.0,
+            "raw_ai_voltage": 0.0,
+            "attack_voltage": None,
+            "fallback_voltage": None,
+            "failover_time": 0.0,
+            "failover_time_ms": 0.0,
+            "grid_load": 0.0,
+            "battery_temp": 0.0,
+            "watchdog_passed": None,
+            "timestamp": round(time.time(), 3),
+        })
+
+    test_step += 1
+
+    if custom_grid is not None and str(custom_grid).strip() != "":
         try:
             grid_load = round(float(custom_grid), 2)
         except (ValueError, TypeError):
-            grid_load = round(random.uniform(0.0, 1.0), 2)
+            grid_load = round(random.uniform(0.3, 0.9), 2)
     else:
-        grid_load = round(random.uniform(0.0, 1.0), 2)
+        grid_load = round(random.uniform(0.3, 0.9), 2)
 
-    if custom_temp is not None:
+    if custom_temp is not None and str(custom_temp).strip() != "":
         try:
             battery_temp = round(float(custom_temp), 1)
         except (ValueError, TypeError):
-            battery_temp = round(random.uniform(20.0, 60.0), 1)
+            battery_temp = round(random.uniform(25.0, 50.0), 1)
     else:
-        battery_temp = round(random.uniform(20.0, 60.0), 1)
+        battery_temp = round(random.uniform(25.0, 50.0), 1)
 
     # 1. Determine raw AI command voltage
-    if custom_voltage is not None:
+    if custom_voltage is not None and str(custom_voltage).strip() != "":
         try:
             ai_voltage = round(float(custom_voltage), 2)
             mode_name = "custom"
@@ -60,21 +85,17 @@ def generate_telemetry(force_mode=None, custom_voltage=None, custom_grid=None, c
             ai_voltage = round(random.uniform(220.0, 240.0), 2)
             mode_name = "safe"
     elif force_mode == "safe":
-        # Guaranteed safe command within 220V - 240V
         ai_voltage = baseline_ai.predict_voltage(grid_load, battery_temp)
         mode_name = "safe"
     elif force_mode == "attack":
-        # Adversarial poisoned AI command: dynamic random voltage strictly > 250V
         ai_voltage = ai_controller.generate_unsafe_voltage()
         mode_name = "attack"
     elif custom_grid is not None or custom_temp is not None:
-        # Predict based on provided telemetry values
         ai_voltage = baseline_ai.predict_voltage(grid_load, battery_temp)
         mode_name = "custom_telemetry"
     else:
-        # Auto simulation (85% safe, 15% attack with dynamic >250V spikes)
-        ai_voltage = ai_controller.predict_voltage(grid_load, battery_temp)
-        mode_name = "auto"
+        ai_voltage = round(random.uniform(220.0, 240.0), 2)
+        mode_name = "safe"
 
     # 2. Hardware watchdog safety validation (200.0V - 250.0V window)
     is_safe, validated_voltage = watchdog.validate_output(ai_voltage)
@@ -84,7 +105,6 @@ def generate_telemetry(force_mode=None, custom_voltage=None, custom_grid=None, c
         applied_voltage = validated_voltage
         failover_time = 0.0
     else:
-        # Watchdog intercepted unsafe command: shut down AI and failover to deterministic microcontroller
         start_ts = time.perf_counter()
         applied_voltage = fallback.get_safe_voltage()
         end_ts = time.perf_counter()
@@ -92,7 +112,7 @@ def generate_telemetry(force_mode=None, custom_voltage=None, custom_grid=None, c
         active_controller = "Deterministic Fallback"
 
     return jsonify({
-        "iteration": telemetry_step,
+        "iteration": test_step,
         "mode": mode_name,
         "active_controller": active_controller,
         "applied_voltage": applied_voltage,
@@ -111,17 +131,17 @@ def generate_telemetry(force_mode=None, custom_voltage=None, custom_grid=None, c
 @app.route("/", defaults={"path": ""}, methods=["GET", "POST"])
 @app.route("/<path:path>", methods=["GET", "POST"])
 def handle_all(path):
-    """Handles index HTML rendering, API telemetry, and custom data testing."""
+    """Handles index HTML rendering and on-demand test requests."""
     normalized = path.strip("/").lower()
 
-    # Serve index HTML if requested
+    # Serve index HTML if root requested
     if normalized in ["", "index", "index.html"]:
         if HTML_PATH.exists():
             with open(HTML_PATH, "r", encoding="utf-8") as f:
                 return f.read(), 200, {"Content-Type": "text/html; charset=utf-8"}
         return "<h1>EdgeGuard Dashboard</h1>", 200
 
-    # Extract simulation parameters (support both GET query params and JSON payload)
+    # Extract test parameters (support GET query params and JSON payload)
     json_data = request.json if request.is_json and request.json else {}
     mode = request.args.get("mode", json_data.get("mode"))
     voltage = request.args.get("voltage", json_data.get("voltage"))

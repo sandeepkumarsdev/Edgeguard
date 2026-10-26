@@ -19,33 +19,28 @@ from watchdog.validator import HardwareWatchdog
 TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
 app = Flask(__name__, template_folder=str(TEMPLATE_DIR))
 
-LOG_FILE_PATH = PROJECT_ROOT / "simulation_log.json"
-
-# Simulation controllers for serverless / on-demand telemetry generation
+# On-demand simulation controllers
 baseline_ai = EdgeAIController()
 ai_controller = CompromisedAIController()
 watchdog = HardwareWatchdog()
 fallback = DeterministicFallback()
-telemetry_step = 0
+test_iteration = 0
 
 
 @app.route("/")
 def index():
-    """Renders the EdgeGuard real-time telemetry dashboard."""
+    """Renders the EdgeGuard testing dashboard."""
     return render_template("index.html")
 
 
 @app.route("/api/data", methods=["GET", "POST"])
 def get_data():
-    """Returns telemetry data.
+    """Returns telemetry data strictly on-demand.
 
-    Supports custom data parameters:
-      - voltage: Injects a specific voltage (e.g. 230, 260, 500, 180).
-      - grid_load: Grid load level (0.0 to 1.0).
-      - battery_temp: Battery temperature in °C (20.0 to 60.0).
-      - mode: 'safe' | 'attack' | 'auto'.
+    When no test parameters are supplied (or mode='standby'/'reset'),
+    all values return zero/standby.
     """
-    global telemetry_step
+    global test_iteration
 
     json_data = request.json if request.is_json and request.json else {}
     mode = request.args.get("mode", json_data.get("mode"))
@@ -53,47 +48,52 @@ def get_data():
     custom_grid = request.args.get("grid_load", json_data.get("grid_load"))
     custom_temp = request.args.get("battery_temp", json_data.get("battery_temp"))
 
-    cwd_log = Path("simulation_log.json")
-    target_path = cwd_log if cwd_log.exists() else LOG_FILE_PATH
+    has_test = (
+        mode in ["safe", "attack"]
+        or custom_voltage is not None
+        or (custom_grid is not None and str(custom_grid).strip() != "")
+        or (custom_temp is not None and str(custom_temp).strip() != "")
+    )
 
-    has_custom = custom_voltage is not None or custom_grid is not None or custom_temp is not None or mode in ["safe", "attack"]
+    # If no test action requested or reset, return zero state
+    if not has_test or mode in ["standby", "reset"]:
+        return jsonify({
+            "iteration": 0,
+            "mode": "standby",
+            "active_controller": "Standby",
+            "applied_voltage": 0.0,
+            "raw_ai_voltage": 0.0,
+            "attack_voltage": None,
+            "fallback_voltage": None,
+            "failover_time": 0.0,
+            "failover_time_ms": 0.0,
+            "grid_load": 0.0,
+            "battery_temp": 0.0,
+            "watchdog_passed": None,
+            "timestamp": round(time.time(), 3),
+        })
 
-    # If no explicit manual test data is requested and local engine log is fresh, use log
-    if not has_custom:
-        if target_path.exists():
-            try:
-                mtime = os.path.getmtime(target_path)
-                if time.time() - mtime < 4.0:
-                    with open(target_path, "r", encoding="utf-8") as f:
-                        log_entries = json.load(f)
-                    if log_entries:
-                        entry = dict(log_entries[-1])
-                        entry["mode"] = "auto"
-                        return jsonify(entry)
-            except Exception:
-                pass
+    # Execute on-demand test iteration
+    test_iteration += 1
 
-    # Dynamic calculation for custom test data
-    telemetry_step += 1
-
-    if custom_grid is not None:
+    if custom_grid is not None and str(custom_grid).strip() != "":
         try:
             grid_load = round(float(custom_grid), 2)
         except (ValueError, TypeError):
-            grid_load = round(random.uniform(0.0, 1.0), 2)
+            grid_load = round(random.uniform(0.3, 0.9), 2)
     else:
-        grid_load = round(random.uniform(0.0, 1.0), 2)
+        grid_load = round(random.uniform(0.3, 0.9), 2)
 
-    if custom_temp is not None:
+    if custom_temp is not None and str(custom_temp).strip() != "":
         try:
             battery_temp = round(float(custom_temp), 1)
         except (ValueError, TypeError):
-            battery_temp = round(random.uniform(20.0, 60.0), 1)
+            battery_temp = round(random.uniform(25.0, 50.0), 1)
     else:
-        battery_temp = round(random.uniform(20.0, 60.0), 1)
+        battery_temp = round(random.uniform(25.0, 50.0), 1)
 
     # 1. Determine raw AI voltage
-    if custom_voltage is not None:
+    if custom_voltage is not None and str(custom_voltage).strip() != "":
         try:
             ai_voltage = round(float(custom_voltage), 2)
             mode_name = "custom"
@@ -110,10 +110,10 @@ def get_data():
         ai_voltage = baseline_ai.predict_voltage(grid_load, battery_temp)
         mode_name = "custom_telemetry"
     else:
-        ai_voltage = ai_controller.predict_voltage(grid_load, battery_temp)
-        mode_name = "auto"
+        ai_voltage = round(random.uniform(220.0, 240.0), 2)
+        mode_name = "safe"
 
-    # 2. Hardware watchdog safety validation
+    # 2. Hardware watchdog safety validation (200.0V - 250.0V)
     is_safe, validated_voltage = watchdog.validate_output(ai_voltage)
 
     if is_safe:
@@ -128,7 +128,7 @@ def get_data():
         active_controller = "Deterministic Fallback"
 
     return jsonify({
-        "iteration": telemetry_step,
+        "iteration": test_iteration,
         "mode": mode_name,
         "active_controller": active_controller,
         "applied_voltage": applied_voltage,
@@ -145,4 +145,4 @@ def get_data():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    app.run(port=5000)
